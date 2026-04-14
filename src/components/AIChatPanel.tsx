@@ -18,10 +18,18 @@ interface AIChatPanelProps {
   caseName?: string | null;
   caseDescription?: string | null;
   documents?: string[];
+  missingFields?: string[];
+  caseData?: {
+    court: string | null;
+    court_division: string | null;
+    area_of_law: string | null;
+    state: string | null;
+    case_number: string | null;
+  };
   onDocumentGenerated?: () => void;
 }
 
-export function AIChatPanel({ caseId, caseName, caseDescription, documents, onDocumentGenerated }: AIChatPanelProps) {
+export function AIChatPanel({ caseId, caseName, caseDescription, documents, missingFields, caseData, onDocumentGenerated }: AIChatPanelProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -31,12 +39,23 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, onDo
   const [loadingHistory, setLoadingHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const welcomeMessage = useCallback((): Message => ({
-    role: "assistant",
-    content: caseId && caseName
-      ? `Olá! Estou analisando o processo **${caseName}**${caseDescription ? `:\n\n> ${caseDescription.slice(0, 200)}${caseDescription.length > 200 ? "..." : ""}` : "."}\n\n${documents && documents.length > 0 ? `📎 **${documents.length} documento(s)** vinculado(s).\n\n` : ""}Como posso ajudar? Posso:\n- Analisar o caso e identificar brechas jurídicas\n- Gerar peças jurídicas (petições, recursos, contestações)\n- Pesquisar fundamentação legal aplicável\n- Estimar probabilidade de êxito`
-      : "Olá! Sou o Copiloto JURIS AI. Selecione um processo para começar.",
-  }), [caseId, caseName, caseDescription, documents]);
+  const welcomeMessage = useCallback((): Message => {
+    if (!caseId || !caseName) {
+      return { role: "assistant", content: "Olá! Sou o Copiloto JURIS AI. Selecione um processo para começar." };
+    }
+
+    const hasMissing = missingFields && missingFields.length > 0;
+    let content = `Olá! Estou analisando o processo **${caseName}**${caseDescription ? `:\n\n> ${caseDescription.slice(0, 200)}${caseDescription.length > 200 ? "..." : ""}` : "."}`;
+    content += documents && documents.length > 0 ? `\n\n📎 **${documents.length} documento(s)** vinculado(s).` : "";
+
+    if (hasMissing) {
+      content += `\n\n⚠️ **Dados incompletos detectados:** ${missingFields.join(", ")}.\nPreciso coletar essas informações antes de gerar qualquer peça. Vamos começar?`;
+    } else {
+      content += `\n\n✅ Todos os dados do processo estão preenchidos. Como posso ajudar?\n- Analisar o caso e identificar brechas\n- Gerar peças jurídicas\n- Pesquisar fundamentação legal\n- Estimar probabilidade de êxito`;
+    }
+
+    return { role: "assistant", content };
+  }, [caseId, caseName, caseDescription, documents, missingFields]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -167,11 +186,25 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, onDo
 
     // Build context-enriched messages for AI
     const contextMessages = [...allMessages];
-    if (caseId && caseDescription && allMessages.length <= 2) {
-      // Add case context as first user-invisible context
+    if (caseId && allMessages.length <= 2) {
+      const caseInfo = [
+        `Processo: ${caseName || "Sem nome"}`,
+        caseData?.case_number ? `Número: ${caseData.case_number}` : null,
+        caseData?.court ? `Tribunal: ${caseData.court}` : null,
+        caseData?.court_division ? `Vara: ${caseData.court_division}` : null,
+        caseData?.area_of_law ? `Área: ${caseData.area_of_law}` : null,
+        caseData?.state ? `Estado: ${caseData.state}` : null,
+        caseDescription ? `Descrição: ${caseDescription}` : null,
+        `Documentos: ${documents?.join(", ") || "nenhum"}`,
+      ].filter(Boolean).join("\n");
+
+      const missingInfo = missingFields && missingFields.length > 0
+        ? `\n\nINFORMAÇÕES FALTANTES NO CADASTRO: ${missingFields.join(", ")}.\nIMPORTANTE: Antes de gerar qualquer peça, você DEVE perguntar ao advogado sobre cada informação faltante, uma por uma, em perguntas sequenciais. Só pergunte sobre qual documento gerar DEPOIS de coletar todos os dados necessários.`
+        : "";
+
       const contextMsg: Message = {
         role: "user",
-        content: `[CONTEXTO DO PROCESSO - NÃO RESPONDA A ESTA MENSAGEM DIRETAMENTE]\nProcesso: ${caseName}\nDescrição: ${caseDescription}\nDocumentos: ${documents?.join(", ") || "nenhum"}\n[FIM DO CONTEXTO]`,
+        content: `[CONTEXTO DO PROCESSO - NÃO RESPONDA A ESTA MENSAGEM DIRETAMENTE]\n${caseInfo}${missingInfo}\n[FIM DO CONTEXTO]`,
       };
       contextMessages.splice(0, 0, contextMsg);
     }

@@ -24,9 +24,10 @@ function formatDate(dateStr: string) {
 interface GeneratedDocsPanelProps {
   caseId: string;
   refreshKey?: number;
+  fullPage?: boolean;
 }
 
-export function GeneratedDocsPanel({ caseId, refreshKey }: GeneratedDocsPanelProps) {
+export function GeneratedDocsPanel({ caseId, refreshKey, fullPage }: GeneratedDocsPanelProps) {
   const { user } = useAuth();
   const [docs, setDocs] = useState<GenDoc[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<GenDoc | null>(null);
@@ -46,18 +47,33 @@ export function GeneratedDocsPanel({ caseId, refreshKey }: GeneratedDocsPanelPro
       });
   }, [user, caseId, refreshKey]);
 
-  if (docs.length === 0 && !loading) return null;
+  if (docs.length === 0 && !loading) {
+    if (fullPage) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6">
+          <ScrollText className="size-10 mb-3 opacity-30" />
+          <p className="text-sm">Nenhuma peça gerada ainda.</p>
+          <p className="text-xs mt-1">Use o Copiloto Jurídico para gerar petições, recursos e outras peças.</p>
+        </div>
+      );
+    }
+    return null;
+  }
 
-  const Icon = selectedDoc ? (typeIcons[selectedDoc.document_type] || FileText) : FileText;
+  const containerClass = fullPage
+    ? "flex-1 flex flex-col overflow-hidden"
+    : "w-72 border-l border-border flex flex-col bg-card shrink-0 overflow-hidden";
 
   return (
-    <div className="w-72 border-l border-border flex flex-col bg-card shrink-0 overflow-hidden">
-      <div className="p-3 border-b border-border bg-muted">
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-          <FileText className="size-3" />
-          Peças Geradas ({docs.length})
-        </h3>
-      </div>
+    <div className={containerClass}>
+      {!fullPage && (
+        <div className="p-3 border-b border-border bg-muted">
+          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+            <FileText className="size-3" />
+            Peças Geradas ({docs.length})
+          </h3>
+        </div>
+      )}
 
       {selectedDoc ? (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -67,12 +83,12 @@ export function GeneratedDocsPanel({ caseId, refreshKey }: GeneratedDocsPanelPro
           >
             ← Voltar à lista
           </button>
-          <div className="px-3 py-2 border-b border-border">
-            <p className="text-xs font-medium">{selectedDoc.title}</p>
-            <p className="text-[10px] text-muted-foreground">{selectedDoc.document_type} · {formatDate(selectedDoc.created_at)}</p>
+          <div className={fullPage ? "px-6 py-3 border-b border-border" : "px-3 py-2 border-b border-border"}>
+            <p className={fullPage ? "text-sm font-medium" : "text-xs font-medium"}>{selectedDoc.title}</p>
+            <p className={fullPage ? "text-xs text-muted-foreground" : "text-[10px] text-muted-foreground"}>{selectedDoc.document_type} · {formatDate(selectedDoc.created_at)}</p>
           </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <pre className="text-[11px] leading-relaxed whitespace-pre-wrap font-sans text-foreground/90">
+          <div className={fullPage ? "flex-1 overflow-y-auto p-6" : "flex-1 overflow-y-auto p-3"}>
+            <pre className={`${fullPage ? "text-sm max-w-3xl mx-auto" : "text-[11px]"} leading-relaxed whitespace-pre-wrap font-sans text-foreground/90`}>
               {selectedDoc.content}
             </pre>
           </div>

@@ -112,8 +112,6 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
           <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors" title="Sair">
             <LogOut className="size-4" />
           </button>
-        </div>
-      </div>
       </div>
     </aside>
   );

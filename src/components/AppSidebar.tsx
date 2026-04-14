@@ -1,4 +1,4 @@
-import { LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, Zap } from "lucide-react";
 import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,11 +31,16 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const [profile, setProfile] = useState<{ full_name: string | null; oab_number: string | null; oab_state: string | null } | null>(null);
+  const [credits, setCredits] = useState<{ credits_total: number; credits_used: number } | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("full_name, oab_number, oab_state").eq("user_id", user.id).single().then(({ data }) => {
-      if (data) setProfile(data);
+    Promise.all([
+      supabase.from("profiles").select("full_name, oab_number, oab_state").eq("user_id", user.id).single(),
+      supabase.from("user_credits").select("credits_total, credits_used").eq("user_id", user.id).single(),
+    ]).then(([profileRes, creditsRes]) => {
+      if (profileRes.data) setProfile(profileRes.data);
+      if (creditsRes.data) setCredits(creditsRes.data);
     });
   }, [user]);
 
@@ -56,6 +61,30 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
         </div>
       </div>
 
+      {/* Credit control */}
+      <div className="px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Zap className="size-3.5 text-primary" />
+          <span className="text-xs font-medium truncate">{profile?.full_name || user?.email || "Usuário"}</span>
+        </div>
+        {credits && (
+          <>
+            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all"
+                style={{ width: `${credits.credits_total > 0 ? Math.min((credits.credits_used / credits.credits_total) * 100, 100) : 0}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-[10px] text-muted-foreground">{credits.credits_used} usados</span>
+              <span className="text-[10px] text-muted-foreground">{credits.credits_total} total</span>
+            </div>
+          </>
+        )}
+        {!credits && (
+          <p className="text-[10px] text-muted-foreground">Sem plano ativo</p>
+        )}
+      </div>
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const showSection = item.section !== lastSection;

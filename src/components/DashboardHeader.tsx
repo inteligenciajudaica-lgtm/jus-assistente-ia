@@ -25,6 +25,7 @@ export function DashboardHeader({ onCaseCreated }: DashboardHeaderProps) {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="size-4" />
         </Button>
+        <GenerateDocumentDialog />
         <NewCaseDialog onCreated={onCaseCreated} />
       </div>
     </header>

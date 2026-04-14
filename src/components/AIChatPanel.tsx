@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, RotateCcw, Link2 } from "lucide-react";
+import { Send, RotateCcw, Link2, FolderOpen, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,25 +12,31 @@ interface Message {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/legal-chat`;
-const WELCOME_MSG: Message = {
-  role: "assistant",
-  content: "Olá! Sou o Copiloto JURIS AI. Como posso ajudar você hoje? Posso analisar casos, pesquisar jurisprudência ou auxiliar na redação de peças jurídicas.",
-};
 
 interface AIChatPanelProps {
   caseId?: string | null;
   caseName?: string | null;
+  caseDescription?: string | null;
+  documents?: string[];
+  onDocumentGenerated?: () => void;
 }
 
-export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
-  const { session, user } = useAuth();
+export function AIChatPanel({ caseId, caseName, caseDescription, documents, onDocumentGenerated }: AIChatPanelProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MSG]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const welcomeMessage = useCallback((): Message => ({
+    role: "assistant",
+    content: caseId && caseName
+      ? `Olá! Estou analisando o processo **${caseName}**${caseDescription ? `:\n\n> ${caseDescription.slice(0, 200)}${caseDescription.length > 200 ? "..." : ""}` : "."}\n\n${documents && documents.length > 0 ? `📎 **${documents.length} documento(s)** vinculado(s).\n\n` : ""}Como posso ajudar? Posso:\n- Analisar o caso e identificar brechas jurídicas\n- Gerar peças jurídicas (petições, recursos, contestações)\n- Pesquisar fundamentação legal aplicável\n- Estimar probabilidade de êxito`
+      : "Olá! Sou o Copiloto JURIS AI. Selecione um processo para começar.",
+  }), [caseId, caseName, caseDescription, documents]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -44,14 +50,12 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
 
     const loadConversation = async () => {
       if (!caseId) {
-        // No case selected — reset to fresh chat
         setConversationId(null);
-        setMessages([WELCOME_MSG]);
+        setMessages([welcomeMessage()]);
         return;
       }
 
       setLoadingHistory(true);
-      // Find existing conversation for this case
       const { data: conv } = await supabase
         .from("chat_conversations")
         .select("id")
@@ -63,7 +67,6 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
 
       if (conv) {
         setConversationId(conv.id);
-        // Load messages
         const { data: msgs } = await supabase
           .from("chat_messages")
           .select("role, content")
@@ -73,20 +76,17 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
         if (msgs && msgs.length > 0) {
           setMessages(msgs.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })));
         } else {
-          setMessages([WELCOME_MSG]);
+          setMessages([welcomeMessage()]);
         }
       } else {
-        // Create new conversation for this case
         const { data: newConv } = await supabase
           .from("chat_conversations")
           .insert({ user_id: user.id, case_id: caseId, title: caseName || "Conversa" })
           .select("id")
           .single();
 
-        if (newConv) {
-          setConversationId(newConv.id);
-        }
-        setMessages([WELCOME_MSG]);
+        if (newConv) setConversationId(newConv.id);
+        setMessages([welcomeMessage()]);
       }
       setLoadingHistory(false);
     };
@@ -94,23 +94,10 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
     loadConversation();
   }, [caseId, user]);
 
-  const saveMessage = useCallback(async (role: string, content: string) => {
-    if (!conversationId || !user) return;
-    await supabase.from("chat_messages").insert({
-      conversation_id: conversationId,
-      user_id: user.id,
-      role,
-      content,
-    });
-    // Update conversation timestamp
-    await supabase.from("chat_conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
-  }, [conversationId, user]);
-
   const ensureConversation = useCallback(async (): Promise<string | null> => {
     if (conversationId) return conversationId;
     if (!user) return null;
 
-    // Create a conversation (no case linked if none selected)
     const { data } = await supabase
       .from("chat_conversations")
       .insert({ user_id: user.id, case_id: caseId || null, title: caseName || "Conversa geral" })
@@ -124,6 +111,45 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
     return null;
   }, [conversationId, user, caseId, caseName]);
 
+  // Detect if AI generated a document and save it
+  const detectAndSaveDocument = useCallback(async (content: string, convId: string | null) => {
+    if (!user || !caseId) return;
+
+    // Check for document generation patterns in AI response
+    const docPatterns = [
+      /(?:PETIÇÃO|CONTESTAÇÃO|RECURSO|PARECER|CONTRATO|PROCURAÇÃO|NOTIFICAÇÃO|HABEAS CORPUS|PEÇA|MINUTA)/i,
+    ];
+    const hasDocumentMarker = content.includes("---") && docPatterns.some(p => p.test(content));
+
+    // Also check if content has structured legal document format
+    const isStructuredDoc = (
+      (content.includes("EXCELENTÍSSIMO") || content.includes("ILUSTRÍSSIMO") || content.includes("AO JUÍZO")) &&
+      content.length > 500
+    );
+
+    if (hasDocumentMarker || isStructuredDoc) {
+      // Extract document type
+      let docType = "peça jurídica";
+      const typeMatch = content.match(/(?:petição\s*inicial|contestação|recurso|parecer|contrato|procuração|notificação|habeas\s*corpus)/i);
+      if (typeMatch) docType = typeMatch[0].toLowerCase();
+
+      // Extract title
+      let title = `${docType.charAt(0).toUpperCase() + docType.slice(1)} - ${caseName || "Processo"}`;
+
+      await supabase.from("generated_documents").insert({
+        user_id: user.id,
+        case_id: caseId,
+        conversation_id: convId,
+        title,
+        document_type: docType,
+        content,
+      });
+
+      onDocumentGenerated?.();
+      toast({ title: "Peça salva!", description: `"${title}" foi adicionada às Peças Geradas.` });
+    }
+  }, [user, caseId, caseName, onDocumentGenerated, toast]);
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
     const userMsg: Message = { role: "user", content: input };
@@ -132,15 +158,22 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
     setInput("");
     setIsLoading(true);
 
-    // Ensure conversation exists and save user message
     const convId = await ensureConversation();
     if (convId && user) {
       await supabase.from("chat_messages").insert({
-        conversation_id: convId,
-        user_id: user.id,
-        role: "user",
-        content: input,
+        conversation_id: convId, user_id: user.id, role: "user", content: input,
       });
+    }
+
+    // Build context-enriched messages for AI
+    const contextMessages = [...allMessages];
+    if (caseId && caseDescription && allMessages.length <= 2) {
+      // Add case context as first user-invisible context
+      const contextMsg: Message = {
+        role: "user",
+        content: `[CONTEXTO DO PROCESSO - NÃO RESPONDA A ESTA MENSAGEM DIRETAMENTE]\nProcesso: ${caseName}\nDescrição: ${caseDescription}\nDocumentos: ${documents?.join(", ") || "nenhum"}\n[FIM DO CONTEXTO]`,
+      };
+      contextMessages.splice(0, 0, contextMsg);
     }
 
     let assistantSoFar = "";
@@ -152,7 +185,7 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: allMessages }),
+        body: JSON.stringify({ messages: contextMessages }),
       });
 
       if (!resp.ok) {
@@ -203,12 +236,12 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
       // Save assistant response
       if (assistantSoFar && convId && user) {
         await supabase.from("chat_messages").insert({
-          conversation_id: convId,
-          user_id: user.id,
-          role: "assistant",
-          content: assistantSoFar,
+          conversation_id: convId, user_id: user.id, role: "assistant", content: assistantSoFar,
         });
         await supabase.from("chat_conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
+
+        // Check if AI generated a legal document
+        await detectAndSaveDocument(assistantSoFar, convId);
       }
     } catch (e: any) {
       toast({ title: "Erro na IA", description: e.message, variant: "destructive" });
@@ -219,7 +252,7 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
 
   const handleNewChat = async () => {
     setConversationId(null);
-    setMessages([WELCOME_MSG]);
+    setMessages([welcomeMessage()]);
     if (caseId && user) {
       const { data } = await supabase
         .from("chat_conversations")
@@ -238,53 +271,62 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
   };
 
   const quickActions = [
-    { label: "Analisar Caso", prompt: "Preciso de ajuda para analisar um caso. Vou fornecer os detalhes." },
-    { label: "Gerar Peça", prompt: "Preciso gerar uma peça jurídica. Quais informações você precisa?" },
-    { label: "Pesquisar Lei", prompt: "Preciso pesquisar a legislação aplicável ao seguinte tema:" },
+    { label: "Analisar Caso", prompt: "Analise este processo, identifique as questões jurídicas centrais, possíveis brechas e estime a probabilidade de sucesso." },
+    { label: "Gerar Petição", prompt: "Preciso gerar uma petição inicial para este processo. Use os dados do caso e gere a peça completa." },
+    { label: "Gerar Recurso", prompt: "Preciso gerar um recurso para este processo. Use os dados e elabore a peça." },
+    { label: "Fundamentação Legal", prompt: "Pesquise e apresente toda a fundamentação legal aplicável a este caso, com artigos de lei e princípios." },
   ];
 
   return (
-    <aside className="w-96 border-l border-border flex flex-col bg-card shrink-0">
-      <div className="p-5 border-b border-border bg-muted">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold tracking-tight uppercase">Copiloto Jurídico</h2>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="size-6" onClick={handleNewChat} title="Nova conversa">
-              <RotateCcw className="size-3" />
-            </Button>
-            <span className={`size-2 rounded-full ${isLoading ? "bg-warning animate-pulse" : "bg-success"}`} />
+    <div className="flex-1 flex flex-col min-w-0 bg-background">
+      {/* Header */}
+      <div className="px-6 py-3 border-b border-border bg-card flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="size-7 bg-primary rounded-sm flex items-center justify-center">
+            <span className="text-[10px] font-bold text-primary-foreground">IA</span>
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold">Copiloto Jurídico</h2>
+            {caseId && caseName ? (
+              <p className="text-[11px] text-primary flex items-center gap-1">
+                <Link2 className="size-3" />
+                {caseName}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">Selecione um processo</p>
+            )}
           </div>
         </div>
-        {caseId && caseName ? (
-          <p className="text-xs text-primary mt-0.5 flex items-center gap-1">
-            <Link2 className="size-3" />
-            Vinculado: {caseName}
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground mt-0.5">Assistente de análise e redação</p>
-        )}
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={handleNewChat} title="Nova conversa">
+            <RotateCcw className="size-3" />
+            Nova conversa
+          </Button>
+          <span className={`size-2 rounded-full ${isLoading ? "bg-warning animate-pulse" : "bg-success"}`} />
+        </div>
       </div>
 
+      {/* Messages */}
       {loadingHistory ? (
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
           Carregando histórico...
         </div>
       ) : (
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {messages.map((msg, i) => (
-            <div key={i}>
+            <div key={i} className="max-w-3xl mx-auto">
               {msg.role === "assistant" ? (
                 <div className="flex gap-3 items-start">
-                  <div className="size-6 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm">
+                  <div className="size-7 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm mt-0.5">
                     <span className="text-[9px] font-bold">IA</span>
                   </div>
-                  <div className="p-3 bg-muted border border-border rounded-sm text-sm leading-relaxed prose prose-sm prose-slate max-w-none dark:prose-invert">
+                  <div className="flex-1 p-4 bg-muted/50 border border-border rounded-sm text-sm leading-relaxed prose prose-sm prose-slate max-w-none dark:prose-invert">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
               ) : (
                 <div className="flex justify-end">
-                  <div className="p-3 bg-primary text-primary-foreground rounded-sm text-sm max-w-[80%]">
+                  <div className="p-4 bg-primary text-primary-foreground rounded-sm text-sm max-w-[85%]">
                     {msg.content}
                   </div>
                 </div>
@@ -292,52 +334,56 @@ export function AIChatPanel({ caseId, caseName }: AIChatPanelProps) {
             </div>
           ))}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
-            <div className="flex gap-3 items-start">
-              <div className="size-6 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm">
+            <div className="max-w-3xl mx-auto flex gap-3 items-start">
+              <div className="size-7 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm">
                 <span className="text-[9px] font-bold">IA</span>
               </div>
-              <div className="p-3 bg-muted border border-border rounded-sm text-sm">
+              <div className="p-4 bg-muted/50 border border-border rounded-sm text-sm">
                 <span className="animate-pulse">Analisando...</span>
               </div>
             </div>
           )}
 
-          {messages.length <= 1 && (
-            <div className="flex gap-2 flex-wrap">
-              {quickActions.map((qa) => (
-                <button
-                  key={qa.label}
-                  onClick={() => { setInput(qa.prompt); }}
-                  className="px-3 py-1.5 bg-muted border border-border rounded-sm text-xs font-medium hover:bg-muted/80 transition-colors"
-                >
-                  {qa.label}
-                </button>
-              ))}
+          {/* Quick actions on fresh chat */}
+          {messages.length <= 1 && caseId && (
+            <div className="max-w-3xl mx-auto">
+              <div className="flex gap-2 flex-wrap justify-center mt-4">
+                {quickActions.map((qa) => (
+                  <button
+                    key={qa.label}
+                    onClick={() => setInput(qa.prompt)}
+                    className="px-4 py-2 bg-card border border-border rounded-sm text-xs font-medium hover:bg-muted transition-colors"
+                  >
+                    {qa.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
 
-      <div className="p-4 border-t border-border">
-        <div className="relative">
+      {/* Input */}
+      <div className="px-6 py-4 border-t border-border bg-card shrink-0">
+        <div className="max-w-3xl mx-auto relative">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={caseId ? `Pergunte sobre ${caseName || "este processo"}...` : "Pergunte algo sobre seu caso..."}
-            className="w-full bg-background border border-border rounded-sm p-3 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-ring/30 h-20 resize-none placeholder:text-muted-foreground/50"
-            disabled={isLoading}
+            placeholder={caseId ? `Pergunte sobre ${caseName || "este processo"}...` : "Selecione um processo para iniciar..."}
+            className="w-full bg-background border border-border rounded-sm p-4 pr-14 text-sm focus:outline-none focus:ring-1 focus:ring-ring/30 h-24 resize-none placeholder:text-muted-foreground/50"
+            disabled={isLoading || !caseId}
           />
           <Button
             size="icon"
-            className="absolute bottom-3 right-3 size-7"
-            disabled={!input.trim() || isLoading}
+            className="absolute bottom-4 right-4 size-8"
+            disabled={!input.trim() || isLoading || !caseId}
             onClick={sendMessage}
           >
-            <Send className="size-3.5" />
+            <Send className="size-4" />
           </Button>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

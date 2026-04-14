@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, FileText, Image, File, Download, MessageSquare, Calendar, MapPin, Scale, Hash } from "lucide-react";
+import { ArrowLeft, FileText, Image, File, Download, ChevronDown, ChevronUp, Scale, Hash, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DocumentUploadDialog } from "@/components/DocumentUploadDialog";
 import { AIChatPanel } from "@/components/AIChatPanel";
+import { GeneratedDocsPanel } from "@/components/GeneratedDocsPanel";
 
 interface CaseDetail {
   id: string;
@@ -30,31 +31,17 @@ interface Doc {
   created_at: string;
 }
 
-interface ChatConv {
-  id: string;
-  title: string | null;
-  created_at: string;
-  updated_at: string;
-  message_count: number;
-}
-
 const statusColors: Record<string, string> = {
-  active: "bg-info",
-  pending: "bg-warning",
-  closed: "bg-success",
-  urgent: "bg-destructive",
+  active: "bg-info", pending: "bg-warning", closed: "bg-success", urgent: "bg-destructive",
 };
 const statusLabels: Record<string, string> = {
-  active: "Ativo",
-  pending: "Aguardando",
-  closed: "Encerrado",
-  urgent: "Urgente",
+  active: "Ativo", pending: "Aguardando", closed: "Encerrado", urgent: "Urgente",
 };
 
 function docIcon(type: string | null) {
-  if (type?.startsWith("image/")) return <Image className="size-4 text-info" />;
-  if (type?.includes("pdf")) return <FileText className="size-4 text-destructive" />;
-  return <File className="size-4 text-muted-foreground" />;
+  if (type?.startsWith("image/")) return <Image className="size-3.5 text-info" />;
+  if (type?.includes("pdf")) return <FileText className="size-3.5 text-destructive" />;
+  return <File className="size-3.5 text-muted-foreground" />;
 }
 
 function formatSize(bytes: number | null) {
@@ -78,34 +65,22 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
   const { user } = useAuth();
   const [caseData, setCaseData] = useState<CaseDetail | null>(null);
   const [docs, setDocs] = useState<Doc[]>([]);
-  const [conversations, setConversations] = useState<ChatConv[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showDocs, setShowDocs] = useState(false);
+  const [showGeneratedDocs, setShowGeneratedDocs] = useState(true);
 
   useEffect(() => {
     if (!user || !caseId) return;
     setLoading(true);
-
     const load = async () => {
-      const [caseRes, docsRes, convsRes] = await Promise.all([
+      const [caseRes, docsRes] = await Promise.all([
         supabase.from("cases").select("*").eq("id", caseId).single(),
         supabase.from("case_documents").select("id, name, file_type, file_size, file_url, created_at").eq("case_id", caseId).order("created_at", { ascending: false }),
-        supabase.from("chat_conversations").select("id, title, created_at, updated_at").eq("case_id", caseId).order("updated_at", { ascending: false }),
       ]);
-
       if (caseRes.data) setCaseData(caseRes.data);
       if (docsRes.data) setDocs(docsRes.data);
-
-      if (convsRes.data) {
-        const convsWithCounts = await Promise.all(
-          convsRes.data.map(async (conv) => {
-            const { count } = await supabase.from("chat_messages").select("id", { count: "exact", head: true }).eq("conversation_id", conv.id);
-            return { ...conv, message_count: count || 0 };
-          })
-        );
-        setConversations(convsWithCounts);
-      }
-
       setLoading(false);
     };
     load();
@@ -117,11 +92,7 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
   };
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-        Carregando processo...
-      </div>
-    );
+    return <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Carregando processo...</div>;
   }
 
   if (!caseData) {
@@ -135,131 +106,127 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
 
   return (
     <div className="flex-1 flex min-h-0">
-      {/* Left: Case details */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5 min-w-0">
+      {/* Left: Compact case context panel */}
+      <div className="w-72 border-r border-border flex flex-col bg-card shrink-0 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
-            <ArrowLeft className="size-4" />
-          </Button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-medium truncate">{caseData.client_name}</h1>
-              <Badge variant="outline" className="shrink-0">
-                <span className={`size-1.5 rounded-full mr-1.5 ${statusColors[caseData.status] || "bg-muted-foreground/40"}`} />
-                {statusLabels[caseData.status] || caseData.status}
-              </Badge>
-            </div>
-            {caseData.case_number && (
-              <p className="text-xs text-muted-foreground font-mono mt-0.5">{caseData.case_number}</p>
-            )}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 size-7">
+              <ArrowLeft className="size-3.5" />
+            </Button>
+            <h2 className="text-sm font-medium truncate flex-1">{caseData.client_name}</h2>
+            <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">
+              <span className={`size-1.5 rounded-full mr-1 ${statusColors[caseData.status] || "bg-muted-foreground/40"}`} />
+              {statusLabels[caseData.status] || caseData.status}
+            </Badge>
           </div>
+          {caseData.case_number && (
+            <p className="text-[10px] text-muted-foreground font-mono ml-9">{caseData.case_number}</p>
+          )}
         </div>
 
-        {/* Info cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {caseData.court && (
-            <div className="bg-card border border-border rounded-sm p-3">
-              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-                <Scale className="size-3" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest">Tribunal</span>
+        <div className="flex-1 overflow-y-auto">
+          {/* Collapsible details */}
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-widest hover:bg-muted/50 transition-colors"
+          >
+            Dados do Processo
+            {showDetails ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+          </button>
+          {showDetails && (
+            <div className="px-4 pb-3 space-y-2">
+              {caseData.court && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Scale className="size-3 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">Tribunal:</span>
+                  <span className="font-medium truncate">{caseData.court}</span>
+                </div>
+              )}
+              {caseData.court_division && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Scale className="size-3 text-muted-foreground shrink-0 opacity-0" />
+                  <span className="text-muted-foreground">Vara:</span>
+                  <span className="font-medium truncate">{caseData.court_division}</span>
+                </div>
+              )}
+              {caseData.area_of_law && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Hash className="size-3 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">Área:</span>
+                  <span className="font-medium truncate">{caseData.area_of_law}</span>
+                </div>
+              )}
+              {caseData.state && (
+                <div className="flex items-center gap-2 text-xs">
+                  <MapPin className="size-3 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">Estado:</span>
+                  <span className="font-medium">{caseData.state}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs">
+                <Calendar className="size-3 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Cadastro:</span>
+                <span className="font-medium">{formatDate(caseData.created_at)}</span>
               </div>
-              <p className="text-xs font-medium">{caseData.court}</p>
-              {caseData.court_division && <p className="text-[10px] text-muted-foreground">{caseData.court_division}</p>}
+              {caseData.description && (
+                <p className="text-xs text-muted-foreground leading-relaxed mt-2 pt-2 border-t border-border whitespace-pre-wrap">
+                  {caseData.description}
+                </p>
+              )}
             </div>
           )}
-          {caseData.area_of_law && (
-            <div className="bg-card border border-border rounded-sm p-3">
-              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-                <Hash className="size-3" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest">Área</span>
-              </div>
-              <p className="text-xs font-medium">{caseData.area_of_law}</p>
-            </div>
-          )}
-          {caseData.state && (
-            <div className="bg-card border border-border rounded-sm p-3">
-              <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-                <MapPin className="size-3" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest">Estado</span>
-              </div>
-              <p className="text-xs font-medium">{caseData.state}</p>
-            </div>
-          )}
-          <div className="bg-card border border-border rounded-sm p-3">
-            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
-              <Calendar className="size-3" />
-              <span className="text-[10px] font-semibold uppercase tracking-widest">Cadastro</span>
-            </div>
-            <p className="text-xs font-medium">{formatDate(caseData.created_at)}</p>
-          </div>
-        </div>
 
-        {/* Description */}
-        {caseData.description && (
-          <div className="bg-card border border-border rounded-sm p-4">
-            <h3 className="text-sm font-medium mb-2">Descrição</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{caseData.description}</p>
-          </div>
-        )}
-
-        {/* Documents */}
-        <div className="bg-card border border-border rounded-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium flex items-center gap-2">
-              <FileText className="size-4" />
+          {/* Collapsible documents */}
+          <button
+            onClick={() => setShowDocs(!showDocs)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-muted-foreground uppercase tracking-widest hover:bg-muted/50 transition-colors border-t border-border"
+          >
+            <span className="flex items-center gap-1.5">
+              <FileText className="size-3" />
               Documentos ({docs.length})
-            </h3>
-            <DocumentUploadDialog onUploaded={() => setRefreshKey((k) => k + 1)} />
-          </div>
-          {docs.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhum documento vinculado.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {docs.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center gap-3 p-2.5 border border-border bg-muted/30 rounded-sm hover:bg-muted/60 transition-colors cursor-pointer group"
-                  onClick={() => handleDownload(doc)}
-                >
-                  {docIcon(doc.file_type)}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{doc.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{formatSize(doc.file_size)} · {formatDate(doc.created_at)}</p>
+            </span>
+            {showDocs ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+          </button>
+          {showDocs && (
+            <div className="px-4 pb-3 space-y-1.5">
+              <div className="flex justify-end mb-1">
+                <DocumentUploadDialog onUploaded={() => setRefreshKey((k) => k + 1)} />
+              </div>
+              {docs.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground text-center py-3">Nenhum documento.</p>
+              ) : (
+                docs.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center gap-2 p-2 border border-border bg-muted/30 rounded-sm hover:bg-muted/60 transition-colors cursor-pointer group"
+                    onClick={() => handleDownload(doc)}
+                  >
+                    {docIcon(doc.file_type)}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-medium truncate">{doc.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatSize(doc.file_size)}</p>
+                    </div>
+                    <Download className="size-3 text-muted-foreground/40 opacity-0 group-hover:opacity-100" />
                   </div>
-                  <Download className="size-3 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Conversations */}
-        <div className="bg-card border border-border rounded-sm p-4">
-          <h3 className="text-sm font-medium flex items-center gap-2 mb-3">
-            <MessageSquare className="size-4" />
-            Conversas ({conversations.length})
-          </h3>
-          {conversations.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma conversa vinculada.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {conversations.map((conv) => (
-                <div key={conv.id} className="flex items-center gap-3 p-2.5 border border-border bg-muted/30 rounded-sm">
-                  <MessageSquare className="size-3.5 text-primary" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{conv.title || "Conversa sem título"}</p>
-                    <p className="text-[10px] text-muted-foreground">{conv.message_count} mensagens · {formatDate(conv.updated_at)}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Right: AI Chat - always active when case is selected */}
-      <AIChatPanel caseId={caseId} caseName={caseName} />
+      {/* Center: AI Chat (main area) */}
+      <AIChatPanel
+        caseId={caseId}
+        caseName={caseName}
+        caseDescription={caseData.description}
+        documents={docs.map(d => d.name)}
+        onDocumentGenerated={() => setRefreshKey((k) => k + 1)}
+      />
+
+      {/* Right: Generated documents panel */}
+      <GeneratedDocsPanel caseId={caseId} refreshKey={refreshKey} />
     </div>
   );
 }

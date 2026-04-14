@@ -176,6 +176,39 @@ export type Database = {
           },
         ]
       }
+      generated_documents: {
+        Row: {
+          case_id: string
+          content: string
+          conversation_id: string | null
+          created_at: string
+          document_type: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          content: string
+          conversation_id?: string | null
+          created_at?: string
+          document_type: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          content?: string
+          conversation_id?: string | null
+          created_at?: string
+          document_type?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string

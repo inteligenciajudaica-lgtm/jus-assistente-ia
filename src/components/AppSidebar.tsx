@@ -85,6 +85,17 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
         })}
       </nav>
 
+      {isAdmin && (
+        <div className="px-4 pb-2">
+          <Link
+            to="/admin"
+            className="flex items-center gap-3 px-3 py-2 w-full text-left rounded-sm text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          >
+            <Shield className="size-4" />
+            Painel Admin
+          </Link>
+        </div>
+      )}
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 px-2">
           <div className="size-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-semibold">
@@ -102,6 +113,7 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
             <LogOut className="size-4" />
           </button>
         </div>
+      </div>
       </div>
     </aside>
   );

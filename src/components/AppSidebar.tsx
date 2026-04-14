@@ -31,11 +31,16 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const [profile, setProfile] = useState<{ full_name: string | null; oab_number: string | null; oab_state: string | null } | null>(null);
+  const [credits, setCredits] = useState<{ credits_total: number; credits_used: number } | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("full_name, oab_number, oab_state").eq("user_id", user.id).single().then(({ data }) => {
-      if (data) setProfile(data);
+    Promise.all([
+      supabase.from("profiles").select("full_name, oab_number, oab_state").eq("user_id", user.id).single(),
+      supabase.from("user_credits").select("credits_total, credits_used").eq("user_id", user.id).single(),
+    ]).then(([profileRes, creditsRes]) => {
+      if (profileRes.data) setProfile(profileRes.data);
+      if (creditsRes.data) setCredits(creditsRes.data);
     });
   }, [user]);
 

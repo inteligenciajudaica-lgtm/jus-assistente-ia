@@ -1,7 +1,12 @@
-import { Search, Plus, Bell } from "lucide-react";
+import { Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NewCaseDialog } from "@/components/NewCaseDialog";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onCaseCreated?: () => void;
+}
+
+export function DashboardHeader({ onCaseCreated }: DashboardHeaderProps) {
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-8 shrink-0">
       <div className="flex items-center flex-1 max-w-xl">
@@ -18,12 +23,8 @@ export function DashboardHeader() {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="size-4" />
-          <span className="absolute top-1.5 right-1.5 size-2 bg-accent rounded-full" />
         </Button>
-        <Button size="sm" className="gap-1.5">
-          <Plus className="size-3.5" />
-          Novo Processo
-        </Button>
+        <NewCaseDialog onCreated={onCaseCreated} />
       </div>
     </header>
   );

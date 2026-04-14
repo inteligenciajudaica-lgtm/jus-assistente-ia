@@ -1,15 +1,18 @@
-import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare, BarChart3, Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavItem {
   icon: React.ElementType;
   label: string;
-  active?: boolean;
   section?: string;
 }
 
 const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Painel de Controle", active: true, section: "Gestão Central" },
+  { icon: LayoutDashboard, label: "Painel de Controle", section: "Gestão Central" },
   { icon: FolderOpen, label: "Processos Ativos", section: "Gestão Central" },
   { icon: CalendarClock, label: "Agenda de Prazos", section: "Gestão Central" },
   { icon: FileText, label: "Biblioteca de Peças", section: "Gestão Central" },
@@ -23,11 +26,24 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: AppSidebarProps) {
+  const { user, signOut } = useAuth();
+  const [profile, setProfile] = useState<{ full_name: string | null; oab_number: string | null; oab_state: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("full_name, oab_number, oab_state").eq("user_id", user.id).single().then(({ data }) => {
+      if (data) setProfile(data);
+    });
+  }, [user]);
+
   let lastSection = "";
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
 
   return (
     <aside className="w-64 border-r border-border flex flex-col shrink-0 bg-card">
-      {/* Logo */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="size-8 bg-primary rounded flex items-center justify-center text-primary-foreground font-mono font-bold text-sm">
@@ -37,13 +53,11 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const showSection = item.section !== lastSection;
           if (showSection) lastSection = item.section!;
           const isActive = item.label === activeItem;
-
           return (
             <div key={item.label}>
               {showSection && (
@@ -68,16 +82,22 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
         })}
       </nav>
 
-      {/* User Profile */}
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 px-2">
           <div className="size-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-semibold">
-            RM
+            {initials}
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium truncate">Dr. Ricardo Menezes</p>
-            <p className="text-xs text-muted-foreground truncate">OAB/SP 442.109</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium truncate">{profile?.full_name || user?.email}</p>
+            {profile?.oab_number && (
+              <p className="text-xs text-muted-foreground truncate">
+                OAB/{profile.oab_state} {profile.oab_number}
+              </p>
+            )}
           </div>
+          <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors" title="Sair">
+            <LogOut className="size-4" />
+          </button>
         </div>
       </div>
     </aside>

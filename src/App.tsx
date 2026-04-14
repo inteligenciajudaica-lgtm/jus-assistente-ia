@@ -4,10 +4,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import Index from "./pages/Index.tsx";
-import AuthPage from "./pages/AuthPage.tsx";
-import AdminPage from "./pages/AdminPage.tsx";
-import NotFound from "./pages/NotFound.tsx";
+import Index from "./pages/Index";
+import AuthPage from "./pages/AuthPage";
+import AdminPage from "./pages/AdminPage";
+import ProcessosPage from "./pages/ProcessosPage";
+import PrazosPage from "./pages/PrazosPage";
+import DocumentosPage from "./pages/DocumentosPage";
+import ConversasPage from "./pages/ConversasPage";
+import PerfilPage from "./pages/PerfilPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +46,11 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/processos" element={<ProtectedRoute><ProcessosPage /></ProtectedRoute>} />
+            <Route path="/prazos" element={<ProtectedRoute><PrazosPage /></ProtectedRoute>} />
+            <Route path="/documentos" element={<ProtectedRoute><DocumentosPage /></ProtectedRoute>} />
+            <Route path="/conversas" element={<ProtectedRoute><ConversasPage /></ProtectedRoute>} />
+            <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

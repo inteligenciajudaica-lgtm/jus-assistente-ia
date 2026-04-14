@@ -1,35 +1,31 @@
-import { LogOut, Shield, Zap } from "lucide-react";
-import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare, BarChart3 } from "lucide-react";
+import { LogOut, Shield, Zap, User } from "lucide-react";
+import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 interface NavItem {
   icon: React.ElementType;
   label: string;
+  path: string;
   section?: string;
 }
 
 const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Painel de Controle", section: "Gestão Central" },
-  { icon: FolderOpen, label: "Processos Ativos", section: "Gestão Central" },
-  { icon: CalendarClock, label: "Agenda de Prazos", section: "Gestão Central" },
-  { icon: FileText, label: "Biblioteca de Peças", section: "Gestão Central" },
-  { icon: MessageSquare, label: "Copiloto Jurídico", section: "Inteligência" },
-  { icon: BarChart3, label: "Análise de Risco", section: "Inteligência" },
+  { icon: LayoutDashboard, label: "Painel de Controle", path: "/", section: "Gestão Central" },
+  { icon: FolderOpen, label: "Processos Ativos", path: "/processos", section: "Gestão Central" },
+  { icon: CalendarClock, label: "Agenda de Prazos", path: "/prazos", section: "Gestão Central" },
+  { icon: FileText, label: "Documentos", path: "/documentos", section: "Gestão Central" },
+  { icon: MessageSquare, label: "Conversas", path: "/conversas", section: "Gestão Central" },
 ];
 
-interface AppSidebarProps {
-  activeItem?: string;
-  onNavigate?: (label: string) => void;
-}
-
-export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: AppSidebarProps) {
+export function AppSidebar() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const location = useLocation();
   const [profile, setProfile] = useState<{ full_name: string | null; oab_number: string | null; oab_state: string | null } | null>(null);
   const [credits, setCredits] = useState<{ credits_total: number; credits_used: number } | null>(null);
 
@@ -85,11 +81,12 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
           <p className="text-[10px] text-muted-foreground">Sem plano ativo</p>
         )}
       </div>
+
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const showSection = item.section !== lastSection;
           if (showSection) lastSection = item.section!;
-          const isActive = item.label === activeItem;
+          const isActive = location.pathname === item.path;
           return (
             <div key={item.label}>
               {showSection && (
@@ -97,10 +94,10 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
                   {item.section}
                 </div>
               )}
-              <button
-                onClick={() => onNavigate?.(item.label)}
+              <Link
+                to={item.path}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 w-full text-left rounded-sm text-sm transition-colors",
+                  "flex items-center gap-3 px-3 py-2 w-full rounded-sm text-sm transition-colors",
                   isActive
                     ? "bg-muted border border-border font-medium text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -108,7 +105,7 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
               >
                 <item.icon className="size-4" />
                 {item.label}
-              </button>
+              </Link>
             </div>
           );
         })}
@@ -118,20 +115,28 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
         <div className="px-4 pb-2">
           <Link
             to="/admin"
-            className="flex items-center gap-3 px-3 py-2 w-full text-left rounded-sm text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 w-full rounded-sm text-sm transition-colors",
+              location.pathname === "/admin"
+                ? "bg-muted border border-border font-medium text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
           >
             <Shield className="size-4" />
             Painel Admin
           </Link>
         </div>
       )}
+
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 px-2">
-          <div className="size-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-semibold">
+          <Link to="/perfil" className="size-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-semibold hover:ring-1 hover:ring-ring/30 transition-all">
             {initials}
-          </div>
+          </Link>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium truncate">{profile?.full_name || user?.email}</p>
+            <Link to="/perfil" className="text-sm font-medium truncate block hover:text-primary transition-colors">
+              {profile?.full_name || user?.email}
+            </Link>
             {profile?.oab_number && (
               <p className="text-xs text-muted-foreground truncate">
                 OAB/{profile.oab_state} {profile.oab_number}

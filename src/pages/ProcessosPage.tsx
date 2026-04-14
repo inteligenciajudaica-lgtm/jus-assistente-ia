@@ -1,14 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { CasesTable } from "@/components/CasesTable";
 import { CaseWorkspace } from "@/components/CaseWorkspace";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 export default function ProcessosPage() {
+  const [searchParams] = useSearchParams();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(searchParams.get("case"));
   const [selectedCaseName, setSelectedCaseName] = useState<string | null>(null);
   const handleCaseCreated = useCallback(() => setRefreshKey((k) => k + 1), []);
 

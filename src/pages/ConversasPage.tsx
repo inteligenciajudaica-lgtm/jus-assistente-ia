@@ -42,14 +42,14 @@ export default function ConversasPage() {
         const { data: cases } = caseIds.length > 0
           ? await supabase.from("cases").select("id, client_name").in("id", caseIds)
           : { data: [] };
-        const caseMap = new Map(cases?.map((c) => [c.id, c.client_name]) || []);
+        const caseMap = new Map<string, string>(cases?.map((c) => [c.id, c.client_name] as [string, string]) || []);
 
         const withCounts = await Promise.all(
           convs.map(async (conv) => {
             const { count } = await supabase.from("chat_messages").select("id", { count: "exact", head: true }).eq("conversation_id", conv.id);
             return {
               ...conv,
-              case_name: conv.case_id ? caseMap.get(conv.case_id) || "—" : undefined,
+              case_name: conv.case_id ? (caseMap.get(conv.case_id) || "—") : undefined,
               message_count: count || 0,
             };
           })

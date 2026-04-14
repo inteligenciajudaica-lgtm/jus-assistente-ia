@@ -81,7 +81,7 @@ export function AdminUsersPanel() {
       .from("user_roles")
       .delete()
       .eq("user_id", userId)
-      .eq("role", role);
+      .eq("role", role as "admin" | "moderator" | "user");
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {

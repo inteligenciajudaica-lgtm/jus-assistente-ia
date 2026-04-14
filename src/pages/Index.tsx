@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { StatsCards } from "@/components/StatsCards";
@@ -7,11 +7,24 @@ import { AIChatPanel } from "@/components/AIChatPanel";
 import { DocumentsWidget } from "@/components/DocumentsWidget";
 import { InsightsWidget } from "@/components/InsightsWidget";
 import { CaseDetailPanel } from "@/components/CaseDetailPanel";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [selectedCaseName, setSelectedCaseName] = useState<string | null>(null);
   const handleCaseCreated = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  // Fetch case name when a case is selected
+  useEffect(() => {
+    if (!selectedCaseId) {
+      setSelectedCaseName(null);
+      return;
+    }
+    supabase.from("cases").select("client_name").eq("id", selectedCaseId).maybeSingle().then(({ data }) => {
+      setSelectedCaseName(data?.client_name || null);
+    });
+  }, [selectedCaseId]);
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -41,7 +54,7 @@ const Index = () => {
               </div>
             </section>
           )}
-          <AIChatPanel />
+          <AIChatPanel caseId={selectedCaseId} caseName={selectedCaseName} />
         </div>
       </main>
     </div>

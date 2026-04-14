@@ -134,8 +134,8 @@ export function AIChatPanel() {
                 <div className="size-6 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm">
                   <span className="text-[9px] font-bold">IA</span>
                 </div>
-                <div className="p-3 bg-muted border border-border rounded-sm text-sm leading-relaxed whitespace-pre-wrap">
-                  {msg.content}
+                <div className="p-3 bg-muted border border-border rounded-sm text-sm leading-relaxed prose prose-sm prose-slate max-w-none dark:prose-invert">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               </div>
             ) : (

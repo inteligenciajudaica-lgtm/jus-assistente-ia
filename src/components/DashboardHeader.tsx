@@ -1,6 +1,7 @@
 import { Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NewCaseDialog } from "@/components/NewCaseDialog";
+import { GenerateDocumentDialog } from "@/components/GenerateDocumentDialog";
 
 interface DashboardHeaderProps {
   onCaseCreated?: () => void;

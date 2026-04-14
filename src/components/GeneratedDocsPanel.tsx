@@ -83,12 +83,12 @@ export function GeneratedDocsPanel({ caseId, refreshKey, fullPage }: GeneratedDo
           >
             ← Voltar à lista
           </button>
-          <div className="px-3 py-2 border-b border-border">
-            <p className="text-xs font-medium">{selectedDoc.title}</p>
-            <p className="text-[10px] text-muted-foreground">{selectedDoc.document_type} · {formatDate(selectedDoc.created_at)}</p>
+          <div className={fullPage ? "px-6 py-3 border-b border-border" : "px-3 py-2 border-b border-border"}>
+            <p className={fullPage ? "text-sm font-medium" : "text-xs font-medium"}>{selectedDoc.title}</p>
+            <p className={fullPage ? "text-xs text-muted-foreground" : "text-[10px] text-muted-foreground"}>{selectedDoc.document_type} · {formatDate(selectedDoc.created_at)}</p>
           </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <pre className="text-[11px] leading-relaxed whitespace-pre-wrap font-sans text-foreground/90">
+          <div className={fullPage ? "flex-1 overflow-y-auto p-6" : "flex-1 overflow-y-auto p-3"}>
+            <pre className={`${fullPage ? "text-sm max-w-3xl mx-auto" : "text-[11px]"} leading-relaxed whitespace-pre-wrap font-sans text-foreground/90`}>
               {selectedDoc.content}
             </pre>
           </div>

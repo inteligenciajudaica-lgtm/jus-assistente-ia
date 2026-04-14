@@ -1,39 +1,76 @@
-const cases = [
-  {
-    number: "5003421-88.2023.8.21.0001",
-    client: "Construtora Vale do Sol S/A",
-    court: "TJSP - 4ª Vara Cível",
-    status: "Petição Protocolada",
-    statusColor: "bg-info",
-    updated: "14:22 — Hoje",
-  },
-  {
-    number: "0800122-45.2024.4.03.6100",
-    client: "Marina Albuquerque",
-    court: "TRF3 - 1ª Vara Federal",
-    status: "Aguardando Despacho",
-    statusColor: "bg-warning",
-    updated: "09:45 — Ontem",
-  },
-  {
-    number: "1002994-33.2022.8.26.0100",
-    client: "TechLog Soluções Digitais",
-    court: "TJSP - Foro Central",
-    status: "Acordo Homologado",
-    statusColor: "bg-success",
-    updated: "18:12 — 14 Out",
-  },
-  {
-    number: "5011244-90.2023.8.21.0012",
-    client: "Eduardo Silveira Santos",
-    court: "TJRJ - 2ª Vara Família",
-    status: "Audiência Designada",
-    statusColor: "bg-muted-foreground/40",
-    updated: "11:30 — 12 Out",
-  },
-];
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+interface Case {
+  id: string;
+  case_number: string | null;
+  client_name: string;
+  court: string | null;
+  court_division: string | null;
+  status: string;
+  updated_at: string;
+}
+
+const statusColors: Record<string, string> = {
+  active: "bg-info",
+  pending: "bg-warning",
+  closed: "bg-success",
+  urgent: "bg-destructive",
+};
+
+const statusLabels: Record<string, string> = {
+  active: "Ativo",
+  pending: "Aguardando",
+  closed: "Encerrado",
+  urgent: "Urgente",
+};
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  const hours = diff / (1000 * 60 * 60);
+  if (hours < 24) return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")} — Hoje`;
+  if (hours < 48) return "Ontem";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
 
 export function CasesTable() {
+  const { user } = useAuth();
+  const [cases, setCases] = useState<Case[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchCases = async () => {
+      const { data, error } = await supabase
+        .from("cases")
+        .select("id, case_number, client_name, court, court_division, status, updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (data) setCases(data);
+      setLoading(false);
+    };
+    fetchCases();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="bg-card border border-border rounded-sm p-8 text-center text-muted-foreground text-sm">
+        Carregando processos...
+      </div>
+    );
+  }
+
+  if (cases.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-sm p-8 text-center text-muted-foreground text-sm">
+        Nenhum processo cadastrado. Clique em "Novo Processo" para começar.
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card border border-border rounded-sm overflow-hidden">
       <table className="w-full text-left text-sm">
@@ -48,17 +85,17 @@ export function CasesTable() {
         </thead>
         <tbody className="divide-y divide-border">
           {cases.map((c) => (
-            <tr key={c.number} className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <td className="px-4 py-3 font-mono text-xs font-medium">{c.number}</td>
-              <td className="px-4 py-3">{c.client}</td>
-              <td className="px-4 py-3 text-muted-foreground">{c.court}</td>
+            <tr key={c.id} className="hover:bg-muted/50 transition-colors cursor-pointer">
+              <td className="px-4 py-3 font-mono text-xs font-medium">{c.case_number || "—"}</td>
+              <td className="px-4 py-3">{c.client_name}</td>
+              <td className="px-4 py-3 text-muted-foreground">{c.court ? `${c.court}${c.court_division ? ` - ${c.court_division}` : ""}` : "—"}</td>
               <td className="px-4 py-3">
                 <span className="inline-flex items-center gap-1.5">
-                  <div className={`size-1.5 rounded-full ${c.statusColor}`} />
-                  {c.status}
+                  <div className={`size-1.5 rounded-full ${statusColors[c.status] || "bg-muted-foreground/40"}`} />
+                  {statusLabels[c.status] || c.status}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">{c.updated}</td>
+              <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">{formatDate(c.updated_at)}</td>
             </tr>
           ))}
         </tbody>

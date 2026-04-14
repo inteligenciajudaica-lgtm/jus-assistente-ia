@@ -61,7 +61,30 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      {/* Credit control */}
+      <div className="px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Zap className="size-3.5 text-primary" />
+          <span className="text-xs font-medium truncate">{profile?.full_name || user?.email || "Usuário"}</span>
+        </div>
+        {credits && (
+          <>
+            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all"
+                style={{ width: `${credits.credits_total > 0 ? Math.min((credits.credits_used / credits.credits_total) * 100, 100) : 0}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-[10px] text-muted-foreground">{credits.credits_used} usados</span>
+              <span className="text-[10px] text-muted-foreground">{credits.credits_total} total</span>
+            </div>
+          </>
+        )}
+        {!credits && (
+          <p className="text-[10px] text-muted-foreground">Sem plano ativo</p>
+        )}
+      </div>
         {navItems.map((item) => {
           const showSection = item.section !== lastSection;
           if (showSection) lastSection = item.section!;

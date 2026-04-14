@@ -1,4 +1,4 @@
-import { LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, Zap } from "lucide-react";
 import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";

@@ -1,0 +1,85 @@
+import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare, BarChart3, Settings } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  active?: boolean;
+  section?: string;
+}
+
+const navItems: NavItem[] = [
+  { icon: LayoutDashboard, label: "Painel de Controle", active: true, section: "Gestão Central" },
+  { icon: FolderOpen, label: "Processos Ativos", section: "Gestão Central" },
+  { icon: CalendarClock, label: "Agenda de Prazos", section: "Gestão Central" },
+  { icon: FileText, label: "Biblioteca de Peças", section: "Gestão Central" },
+  { icon: MessageSquare, label: "Copiloto Jurídico", section: "Inteligência" },
+  { icon: BarChart3, label: "Análise de Risco", section: "Inteligência" },
+];
+
+interface AppSidebarProps {
+  activeItem?: string;
+  onNavigate?: (label: string) => void;
+}
+
+export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: AppSidebarProps) {
+  let lastSection = "";
+
+  return (
+    <aside className="w-64 border-r border-border flex flex-col shrink-0 bg-card">
+      {/* Logo */}
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="size-8 bg-primary rounded flex items-center justify-center text-primary-foreground font-mono font-bold text-sm">
+            JA
+          </div>
+          <span className="font-semibold tracking-tight text-lg">JURIS AI</span>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-1">
+        {navItems.map((item) => {
+          const showSection = item.section !== lastSection;
+          if (showSection) lastSection = item.section!;
+          const isActive = item.label === activeItem;
+
+          return (
+            <div key={item.label}>
+              {showSection && (
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3 mt-6 first:mt-0 px-2">
+                  {item.section}
+                </div>
+              )}
+              <button
+                onClick={() => onNavigate?.(item.label)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 w-full text-left rounded-sm text-sm transition-colors",
+                  isActive
+                    ? "bg-muted border border-border font-medium text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                <item.icon className="size-4" />
+                {item.label}
+              </button>
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* User Profile */}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center gap-3 px-2">
+          <div className="size-8 rounded-full bg-muted border border-border flex items-center justify-center text-xs font-semibold">
+            RM
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">Dr. Ricardo Menezes</p>
+            <p className="text-xs text-muted-foreground truncate">OAB/SP 442.109</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}

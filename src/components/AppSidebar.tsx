@@ -85,6 +85,7 @@ export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: Ap
           <p className="text-[10px] text-muted-foreground">Sem plano ativo</p>
         )}
       </div>
+      <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const showSection = item.section !== lastSection;
           if (showSection) lastSection = item.section!;

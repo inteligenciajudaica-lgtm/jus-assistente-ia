@@ -1,9 +1,11 @@
-import { LogOut } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 interface NavItem {
   icon: React.ElementType;
@@ -27,6 +29,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ activeItem = "Painel de Controle", onNavigate }: AppSidebarProps) {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const [profile, setProfile] = useState<{ full_name: string | null; oab_number: string | null; oab_state: string | null } | null>(null);
 
   useEffect(() => {

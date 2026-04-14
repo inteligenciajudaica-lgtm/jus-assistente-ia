@@ -1,6 +1,7 @@
 import { Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NewCaseDialog } from "@/components/NewCaseDialog";
+import { GenerateDocumentDialog } from "@/components/GenerateDocumentDialog";
 
 interface DashboardHeaderProps {
   onCaseCreated?: () => void;
@@ -24,6 +25,7 @@ export function DashboardHeader({ onCaseCreated }: DashboardHeaderProps) {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="size-4" />
         </Button>
+        <GenerateDocumentDialog />
         <NewCaseDialog onCreated={onCaseCreated} />
       </div>
     </header>

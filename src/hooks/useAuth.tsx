@@ -23,16 +23,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
+        if (event === "TOKEN_REFRESHED") {
+          console.log("Token refreshed successfully");
+        }
+        if (event === "SIGNED_OUT") {
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        // Check if token is close to expiring and refresh proactively
+        const expiresAt = session.expires_at;
+        const now = Math.floor(Date.now() / 1000);
+        if (expiresAt && expiresAt - now < 60) {
+          const { data } = await supabase.auth.refreshSession();
+          setSession(data.session);
+          setUser(data.session?.user ?? null);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      }
       setLoading(false);
     });
 

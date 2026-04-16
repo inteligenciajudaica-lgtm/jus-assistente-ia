@@ -362,17 +362,30 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
           Carregando histórico...
         </div>
       ) : (
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6">
           {messages.map((msg, i) => (
             <div key={i} className="max-w-3xl mx-auto">
               {msg.role === "assistant" ? (
                 <div className="flex gap-3 items-start">
-                  <div className="size-7 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm mt-0.5">
-                    <span className="text-[9px] font-bold">IA</span>
+                  <div className="size-8 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                    <span className="text-[10px] font-bold text-primary-foreground">IA</span>
                   </div>
-                  <div className="flex-1">
-                    <div className="p-4 bg-muted/50 border border-border rounded-sm text-sm leading-relaxed prose prose-sm prose-slate max-w-none dark:prose-invert">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <div className="flex-1 min-w-0">
+                    <div className="rounded-lg rounded-tl-none bg-card border border-border shadow-sm overflow-hidden">
+                      <div className="px-5 py-4 text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert
+                        prose-headings:text-foreground prose-headings:font-semibold prose-headings:tracking-tight
+                        prose-h2:text-base prose-h2:mt-5 prose-h2:mb-2 prose-h2:pb-1.5 prose-h2:border-b prose-h2:border-border/50
+                        prose-h3:text-sm prose-h3:mt-4 prose-h3:mb-1.5
+                        prose-p:text-foreground/90 prose-p:mb-2
+                        prose-strong:text-foreground prose-strong:font-semibold
+                        prose-li:text-foreground/90 prose-li:my-0.5
+                        prose-ul:my-2 prose-ol:my-2
+                        prose-hr:my-4 prose-hr:border-border/40
+                        prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-sm prose-blockquote:py-1 prose-blockquote:px-3 prose-blockquote:not-italic
+                        prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
+                      ">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
                     </div>
                     {/* Clickable questions - only on the last assistant message */}
                     {i === messages.length - 1 && !isLoading && (() => {
@@ -384,7 +397,7 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
                             <button
                               key={qi}
                               onClick={() => { setInput(q); }}
-                              className="px-3 py-2 bg-card border border-border rounded-sm text-xs text-left font-medium hover:bg-primary/10 hover:border-primary/30 transition-colors max-w-full"
+                              className="px-3.5 py-2 bg-card border border-border rounded-lg text-xs text-left font-medium hover:bg-primary/10 hover:border-primary/30 hover:shadow-sm transition-all max-w-full"
                             >
                               {q}
                             </button>
@@ -396,7 +409,7 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
                 </div>
               ) : (
                 <div className="flex justify-end">
-                  <div className="p-4 bg-primary text-primary-foreground rounded-sm text-sm max-w-[85%]">
+                  <div className="px-5 py-3.5 bg-primary text-primary-foreground rounded-lg rounded-br-none text-sm max-w-[85%] shadow-sm">
                     {msg.content}
                   </div>
                 </div>
@@ -405,11 +418,18 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
           ))}
           {isLoading && messages[messages.length - 1]?.role === "user" && (
             <div className="max-w-3xl mx-auto flex gap-3 items-start">
-              <div className="size-7 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm">
-                <span className="text-[9px] font-bold">IA</span>
+              <div className="size-8 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center shrink-0 shadow-sm">
+                <span className="text-[10px] font-bold text-primary-foreground">IA</span>
               </div>
-              <div className="p-4 bg-muted/50 border border-border rounded-sm text-sm">
-                <span className="animate-pulse">Analisando...</span>
+              <div className="px-5 py-4 bg-card border border-border rounded-lg rounded-tl-none shadow-sm text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="flex gap-1">
+                    <span className="size-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                    <span className="size-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                    <span className="size-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                  </span>
+                  <span className="text-muted-foreground">Analisando...</span>
+                </div>
               </div>
             </div>
           )}
@@ -422,7 +442,7 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
                   <button
                     key={qa.label}
                     onClick={() => setInput(qa.prompt)}
-                    className="px-4 py-2 bg-card border border-border rounded-sm text-xs font-medium hover:bg-muted transition-colors"
+                    className="px-4 py-2.5 bg-card border border-border rounded-lg text-xs font-medium hover:bg-primary/10 hover:border-primary/30 hover:shadow-sm transition-all"
                   >
                     {qa.label}
                   </button>

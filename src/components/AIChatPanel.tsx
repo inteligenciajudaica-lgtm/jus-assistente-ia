@@ -332,7 +332,7 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
       {/* Header */}
       <div className="px-6 py-3 border-b border-border bg-card flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="size-7 bg-primary rounded-sm flex items-center justify-center">
+          <div className="size-8 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center shadow-sm">
             <span className="text-[10px] font-bold text-primary-foreground">IA</span>
           </div>
           <div>

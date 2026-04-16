@@ -6,6 +6,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 
+function extractQuestions(content: string): string[] {
+  const lines = content.split("\n");
+  const questions: string[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Match lines that end with "?" and are likely questions from the AI
+    if (trimmed.endsWith("?") && trimmed.length > 10 && trimmed.length < 200) {
+      // Remove markdown formatting like **, -, numbers etc
+      const clean = trimmed.replace(/^[-*•\d.)\s]+/, "").replace(/\*\*/g, "").trim();
+      if (clean.endsWith("?") && clean.length > 10) {
+        questions.push(clean);
+      }
+    }
+  }
+  return questions;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;

@@ -45,14 +45,15 @@ function formatSize(bytes: number) {
 
 interface DocumentUploadDialogProps {
   onUploaded?: () => void;
+  preselectedCaseId?: string;
 }
 
-export function DocumentUploadDialog({ onUploaded }: DocumentUploadDialogProps) {
+export function DocumentUploadDialog({ onUploaded, preselectedCaseId }: DocumentUploadDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [caseId, setCaseId] = useState("");
+  const [caseId, setCaseId] = useState(preselectedCaseId || "");
   const [cases, setCases] = useState<{ id: string; client_name: string; case_number: string | null }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);

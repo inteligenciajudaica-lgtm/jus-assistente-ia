@@ -370,8 +370,28 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
                   <div className="size-7 bg-muted border border-border flex items-center justify-center shrink-0 rounded-sm mt-0.5">
                     <span className="text-[9px] font-bold">IA</span>
                   </div>
-                  <div className="flex-1 p-4 bg-muted/50 border border-border rounded-sm text-sm leading-relaxed prose prose-sm prose-slate max-w-none dark:prose-invert">
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <div className="flex-1">
+                    <div className="p-4 bg-muted/50 border border-border rounded-sm text-sm leading-relaxed prose prose-sm prose-slate max-w-none dark:prose-invert">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                    {/* Clickable questions - only on the last assistant message */}
+                    {i === messages.length - 1 && !isLoading && (() => {
+                      const questions = extractQuestions(msg.content);
+                      if (questions.length === 0) return null;
+                      return (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {questions.map((q, qi) => (
+                            <button
+                              key={qi}
+                              onClick={() => { setInput(q); }}
+                              className="px-3 py-2 bg-card border border-border rounded-sm text-xs text-left font-medium hover:bg-primary/10 hover:border-primary/30 transition-colors max-w-full"
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ) : (

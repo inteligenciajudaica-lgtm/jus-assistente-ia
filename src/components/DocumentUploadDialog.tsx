@@ -60,6 +60,10 @@ export function DocumentUploadDialog({ onUploaded, preselectedCaseId }: Document
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (preselectedCaseId) setCaseId(preselectedCaseId);
+  }, [preselectedCaseId]);
+
+  useEffect(() => {
     if (!user || !open) return;
     supabase
       .from("cases")

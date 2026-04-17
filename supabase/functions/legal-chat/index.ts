@@ -99,51 +99,86 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    let provider = "lovable";
-    let model = "google/gemini-3-flash-preview";
+    // Lista de provedores ordenada por prioridade (com fallback)
+    type ProviderCfg = { provider: "lovable" | "openai"; model: string; enabled: boolean };
+    let providers: ProviderCfg[] = [
+      { provider: "lovable", model: "google/gemini-3-flash-preview", enabled: true },
+    ];
     try {
       const { data: setting } = await supabase
         .from("app_settings")
         .select("value")
         .eq("key", "ai_provider")
         .maybeSingle();
-      if (setting?.value) {
-        provider = (setting.value as any).provider || "lovable";
-        model = (setting.value as any).model || model;
+      const v = setting?.value as any;
+      if (v && Array.isArray(v.providers) && v.providers.length > 0) {
+        providers = v.providers;
+      } else if (v?.provider) {
+        // Compatibilidade com formato antigo
+        providers = [{ provider: v.provider, model: v.model, enabled: true }];
       }
     } catch (e) {
       console.warn("Não foi possível ler app_settings, usando padrão Lovable AI");
     }
 
-    let endpoint: string;
-    let apiKey: string | undefined;
-    if (provider === "openai") {
-      endpoint = "https://api.openai.com/v1/chat/completions";
-      apiKey = Deno.env.get("OPENAI_API_KEY");
-      if (!apiKey) throw new Error("OPENAI_API_KEY não configurada. Configure em Admin → Configurações.");
-    } else {
-      endpoint = "https://ai.gateway.lovable.dev/v1/chat/completions";
-      apiKey = Deno.env.get("LOVABLE_API_KEY");
-      if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+    const activeProviders = providers.filter((p) => p.enabled);
+    if (activeProviders.length === 0) {
+      throw new Error("Nenhum provedor de IA está habilitado. Configure em Admin → Configurações.");
     }
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          ...messages,
-        ],
-        stream: true,
-      }),
-    });
+    let lastError = "";
+    for (const cfg of activeProviders) {
+      let endpoint: string;
+      let apiKey: string | undefined;
 
-    if (!response.ok) {
+      if (cfg.provider === "openai") {
+        endpoint = "https://api.openai.com/v1/chat/completions";
+        apiKey = Deno.env.get("OPENAI_API_KEY");
+        if (!apiKey) {
+          lastError = "OPENAI_API_KEY não configurada";
+          console.warn(`[fallback] ${lastError}, tentando próximo provedor...`);
+          continue;
+        }
+      } else {
+        endpoint = "https://ai.gateway.lovable.dev/v1/chat/completions";
+        apiKey = Deno.env.get("LOVABLE_API_KEY");
+        if (!apiKey) {
+          lastError = "LOVABLE_API_KEY não configurada";
+          console.warn(`[fallback] ${lastError}, tentando próximo provedor...`);
+          continue;
+        }
+      }
+
+      console.log(`[ai] Tentando provedor: ${cfg.provider} (${cfg.model})`);
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: cfg.model,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...messages,
+          ],
+          stream: true,
+        }),
+      });
+
+      if (response.ok) {
+        return new Response(response.body, {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "text/event-stream",
+            "X-AI-Provider": cfg.provider,
+            "X-AI-Model": cfg.model,
+          },
+        });
+      }
+
+      // Erros não recuperáveis (rate limit / créditos) — retornar imediatamente
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns instantes." }), {
           status: 429,
@@ -156,16 +191,16 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: `Erro no serviço de IA (${provider}): ${t.slice(0, 200)}` }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      lastError = `${cfg.provider} retornou ${response.status}: ${t.slice(0, 200)}`;
+      console.error(`[fallback] ${lastError}`);
+      // tenta próximo
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    return new Response(JSON.stringify({ error: `Todos os provedores falharam. Último erro: ${lastError}` }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("chat error:", e);

@@ -372,18 +372,7 @@ export function AIChatPanel({ caseId, caseName, caseDescription, documents, miss
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="rounded-lg rounded-tl-none bg-card border border-border shadow-sm overflow-hidden">
-                      <div className="px-5 py-4 text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert
-                        prose-headings:text-foreground prose-headings:font-semibold prose-headings:tracking-tight
-                        prose-h2:text-base prose-h2:mt-5 prose-h2:mb-2 prose-h2:pb-1.5 prose-h2:border-b prose-h2:border-border/50
-                        prose-h3:text-sm prose-h3:mt-4 prose-h3:mb-1.5
-                        prose-p:text-foreground/90 prose-p:mb-2
-                        prose-strong:text-foreground prose-strong:font-semibold
-                        prose-li:text-foreground/90 prose-li:my-0.5
-                        prose-ul:my-2 prose-ol:my-2
-                        prose-hr:my-4 prose-hr:border-border/40
-                        prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-sm prose-blockquote:py-1 prose-blockquote:px-3 prose-blockquote:not-italic
-                        prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
-                      ">
+                      <div className="px-6 py-5 text-[14px] leading-[1.75] prose prose-sm max-w-none dark:prose-invert chat-prose">
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                     </div>

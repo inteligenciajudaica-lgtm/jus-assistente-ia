@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AdminUsersPanel } from "@/components/admin/AdminUsersPanel";
 import { AdminPlansPanel } from "@/components/admin/AdminPlansPanel";
+import { AdminAISettings } from "@/components/admin/AdminAISettings";
 import { Settings, Users, CreditCard, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -82,20 +83,8 @@ export default function AdminPage() {
           {tab === "users" && <AdminUsersPanel />}
           {tab === "plans" && <AdminPlansPanel />}
           {tab === "settings" && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-medium">Configurações</h2>
-              <div className="bg-card border border-border rounded-sm p-6 space-y-4">
-                <h3 className="font-medium text-sm">Provedores de IA</h3>
-                <p className="text-xs text-muted-foreground">
-                  O sistema utiliza a Lovable AI Gateway por padrão. Para configurar provedores adicionais 
-                  (OpenAI, Anthropic, modelos open-source), entre em contato com o suporte.
-                </p>
-                <div className="p-4 bg-muted rounded-sm">
-                  <p className="text-xs font-mono">Modelo atual: google/gemini-3-flash-preview</p>
-                  <p className="text-xs font-mono text-muted-foreground">Gateway: ai.gateway.lovable.dev</p>
-                  <p className="text-xs font-mono text-muted-foreground">Status: ✅ Conectado</p>
-                </div>
-              </div>
+            <div className="space-y-8">
+              <AdminAISettings />
 
               <div className="bg-card border border-border rounded-sm p-6 space-y-4">
                 <h3 className="font-medium text-sm">Integrações Jurídicas</h3>

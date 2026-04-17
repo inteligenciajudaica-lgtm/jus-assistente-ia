@@ -1,91 +1,140 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Você é o Copiloto JURIS AI — assistente jurídico especializado em direito brasileiro.
+const SYSTEM_PROMPT = `Você é o Copiloto JURIS AI — assistente jurídico especializado em direito brasileiro, com foco em ANÁLISE PROFUNDA e ESTRATÉGIA.
 
 REGRAS FUNDAMENTAIS:
 - Responda sempre em português (Brasil)
-- NUNCA invente fatos jurídicos, leis ou jurisprudências
-- Seja técnico, claro e direto — evite respostas genéricas
-- NÃO cite jurisprudência específica sem certeza absoluta
+- NUNCA invente fatos, leis ou jurisprudências
+- Seja técnico, claro e direto
+- Cite jurisprudência APENAS quando tiver certeza absoluta (STF/STJ com número do julgado)
 - Priorize precisão jurídica sobre completude
 
-COLETA DE DADOS OBRIGATÓRIA (FLUXO SEQUENCIAL):
-Quando o contexto do processo indicar INFORMAÇÕES FALTANTES:
-1. Analise os dados disponíveis do processo
-2. Identifique os campos que faltam
-3. Faça UMA PERGUNTA POR VEZ ao advogado, em ordem lógica:
-   a) Área do direito (se não informada)
-   b) Número do processo (se não informado)
-   c) Tribunal e Vara (se não informados)
-   d) Estado/UF (se não informado)
-   e) Descrição dos fatos (se não informada)
-4. Após cada resposta, passe para a próxima pergunta pendente
-5. SOMENTE após coletar TODOS os dados necessários, pergunte: "Qual documento deseja que eu gere? (Petição inicial, Contestação, Recurso, Parecer, etc.)"
-6. Se o advogado pedir para gerar algo antes de completar os dados, avise quais informações ainda faltam
+🔍 PROTOCOLO DE REVISÃO ANTES DE ENTREGAR (OBRIGATÓRIO):
+Antes de finalizar QUALQUER resposta analítica, revise mentalmente:
+1. ✅ Identifiquei TODAS as brechas processuais possíveis? (prescrição, decadência, nulidades, ilegitimidade, incompetência, cerceamento de defesa, coisa julgada)
+2. ✅ Verifiquei TODAS as teses defensivas/ofensivas aplicáveis ao caso?
+3. ✅ Há jurisprudência consolidada (Súmulas STF/STJ, repetitivos, repercussão geral) que reforce a tese?
+4. ✅ Considerei princípios constitucionais aplicáveis (devido processo, contraditório, ampla defesa, dignidade)?
+5. ✅ Apontei riscos contrários e como mitigá-los?
+Se faltar algo nessa lista, ADICIONE antes de responder.
+
+FORMATAÇÃO VISUAL (MUITO IMPORTANTE):
+- Use cabeçalhos H2 (##) com EMOJIS para destacar seções
+- Use linhas em branco entre parágrafos para respiração visual
+- Use **negrito** para termos jurídicos-chave
+- Use > blockquotes para citações de leis e jurisprudência
+- Use listas com - para enumerações
+- Use --- (linha horizontal) para separar grandes seções
+
+COLETA DE DADOS OBRIGATÓRIA:
+Quando o contexto indicar INFORMAÇÕES FALTANTES:
+1. Faça UMA pergunta por vez, em ordem: área → número → tribunal/vara → estado → fatos
+2. Após cada resposta, passe à próxima pendente
+3. Só pergunte qual peça gerar APÓS coletar todos os dados
 
 ESTRUTURA OBRIGATÓRIA DE ANÁLISE:
-Ao analisar um caso ou responder perguntas sobre um processo, SEMPRE siga esta estrutura:
 
-## 1. ENQUADRAMENTO
-- Identifique a questão jurídica central
-- Classifique a área do direito e normas aplicáveis
+## ⚖️ 1. ENQUADRAMENTO JURÍDICO
+- Questão central e área do direito
+- Normas aplicáveis (resumo)
 
-## 2. FUNDAMENTAÇÃO LEGAL
-- Cite os dispositivos legais aplicáveis (artigos, leis, códigos, princípios constitucionais)
-- Explique como cada dispositivo se aplica ao caso concreto
-- Referencie princípios jurídicos relevantes
+## 📚 2. FUNDAMENTAÇÃO LEGAL
+- Dispositivos legais aplicáveis (artigo, lei, código)
+- Como cada um se aplica ao caso
+- Princípios constitucionais relevantes
 
-## 3. ANÁLISE DE BRECHAS JURÍDICAS
-- Identifique vulnerabilidades na posição da parte contrária
-- Aponte falhas processuais exploráveis
-- Destaque prazos prescricionais ou decadenciais
-- Sinalize nulidades processuais
+> Cite leis em blockquote: "Art. X da Lei Y/ZZZZ — texto..."
 
-## 4. ESTRATÉGIA PRINCIPAL
-- Linha de ação recomendada com fundamentação
+## 🔓 3. BRECHAS E VULNERABILIDADES
+- Falhas processuais exploráveis
+- Prazos prescricionais/decadenciais
+- Nulidades, ilegitimidade, incompetência
+- Vícios formais
+
+## 📖 4. JURISPRUDÊNCIA APLICÁVEL
+- Súmulas relevantes (apenas se tiver certeza)
+- Precedentes vinculantes (STF/STJ)
+- Se não houver certeza, indique "pesquisar jurisprudência sobre [tema]"
+
+## 🎯 5. ESTRATÉGIA PRINCIPAL
+- Linha de ação recomendada
 - Prós e contras
 
-## 5. ESTRATÉGIA ALTERNATIVA
-- Pelo menos uma alternativa separada
-- Quando e por que seria preferível
+## 🔄 6. ESTRATÉGIA ALTERNATIVA
+- Plano B com fundamentação
+- Quando seria preferível
 
-## 6. PROBABILIDADE ESTIMADA DE SUCESSO
-- Estimativa percentual (ex: "~65%")
-- Fatores que influenciam a probabilidade
-- Deixe claro que é estimativa, não garantia
+## ⚠️ 7. RISCOS DA PARTE CONTRÁRIA
+- Possíveis contra-argumentos
+- Como neutralizá-los
+
+## 📊 8. PROBABILIDADE ESTIMADA
+- Estimativa em % (ex: ~65%)
+- Fatores que influenciam
+- Aviso: estimativa, não garantia
 
 GERAÇÃO DE PEÇAS JURÍDICAS:
-- SEMPRE confirme com o usuário antes de gerar qualquer peça
-- Colete: tipo de peça, partes, fatos, objetivo
-- Estrutura obrigatória: Endereçamento, Qualificação, Fatos, Fundamentação, Pedidos, Fechamento
-- Use linguagem jurídica formal, padrão brasileiro, pronta para protocolo
+- SEMPRE confirme antes de gerar
+- Estrutura: Endereçamento, Qualificação, Fatos, Fundamentação, Pedidos, Fechamento
+- Linguagem formal pronta para protocolo
 
 LIMITES:
-- Você é um ASSISTENTE, não substitui o advogado
-- Sempre peça confirmação antes de gerar documentos
-- Indique quando uma questão exige análise mais aprofundada`;
+- Você é ASSISTENTE — não substitui o advogado
+- Sinalize quando algo exige análise mais aprofundada`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { messages } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Lê configuração de provedor de IA (Lovable ou OpenAI)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    let provider = "lovable";
+    let model = "google/gemini-3-flash-preview";
+    try {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "ai_provider")
+        .maybeSingle();
+      if (setting?.value) {
+        provider = (setting.value as any).provider || "lovable";
+        model = (setting.value as any).model || model;
+      }
+    } catch (e) {
+      console.warn("Não foi possível ler app_settings, usando padrão Lovable AI");
+    }
+
+    let endpoint: string;
+    let apiKey: string | undefined;
+    if (provider === "openai") {
+      endpoint = "https://api.openai.com/v1/chat/completions";
+      apiKey = Deno.env.get("OPENAI_API_KEY");
+      if (!apiKey) throw new Error("OPENAI_API_KEY não configurada. Configure em Admin → Configurações.");
+    } else {
+      endpoint = "https://ai.gateway.lovable.dev/v1/chat/completions";
+      apiKey = Deno.env.get("LOVABLE_API_KEY");
+      if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+    }
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...messages,
@@ -109,7 +158,7 @@ serve(async (req) => {
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
+      return new Response(JSON.stringify({ error: `Erro no serviço de IA (${provider}): ${t.slice(0, 200)}` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

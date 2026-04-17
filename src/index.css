@@ -101,3 +101,80 @@
     font-family: 'JetBrains Mono', monospace;
   }
 }
+
+/* Chat AI - Tipografia rica com cores temáticas por tópico */
+@layer components {
+  .chat-prose {
+    color: hsl(var(--foreground) / 0.92);
+  }
+  .chat-prose p {
+    margin-top: 0.85em;
+    margin-bottom: 0.85em;
+    line-height: 1.75;
+  }
+  .chat-prose strong {
+    color: hsl(var(--foreground));
+    font-weight: 600;
+  }
+  .chat-prose ul, .chat-prose ol {
+    margin-top: 0.6em;
+    margin-bottom: 0.85em;
+    padding-left: 1.4em;
+  }
+  .chat-prose li {
+    margin-top: 0.4em;
+    margin-bottom: 0.4em;
+    line-height: 1.7;
+  }
+  .chat-prose hr {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+    border-color: hsl(var(--border) / 0.5);
+  }
+  .chat-prose code {
+    color: hsl(var(--accent));
+    background: hsl(var(--accent) / 0.1);
+    padding: 0.15em 0.45em;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .chat-prose blockquote {
+    margin: 1em 0;
+    padding: 0.7em 1em;
+    border-left: 3px solid hsl(var(--accent) / 0.6);
+    background: hsl(var(--accent) / 0.06);
+    border-radius: 0 0.375rem 0.375rem 0;
+    font-style: normal;
+    color: hsl(var(--foreground) / 0.85);
+  }
+  .chat-prose blockquote p {
+    margin: 0.3em 0;
+  }
+  .chat-prose h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 1.6em;
+    margin-bottom: 0.8em;
+    padding: 0.55em 0.9em;
+    border-radius: 0.5rem;
+    border-left: 4px solid;
+    line-height: 1.4;
+  }
+  .chat-prose h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-top: 1.2em;
+    margin-bottom: 0.5em;
+    color: hsl(var(--foreground));
+  }
+  /* Cores cíclicas por posição do H2 (matches the 8 sections of the prompt) */
+  .chat-prose > h2:nth-of-type(1) { background: hsl(217 91% 60% / 0.10); border-color: hsl(217 91% 55%); color: hsl(217 91% 28%); }
+  .chat-prose > h2:nth-of-type(2) { background: hsl(262 60% 55% / 0.10); border-color: hsl(262 60% 55%); color: hsl(262 60% 32%); }
+  .chat-prose > h2:nth-of-type(3) { background: hsl(0 75% 55% / 0.08); border-color: hsl(0 75% 55%); color: hsl(0 70% 38%); }
+  .chat-prose > h2:nth-of-type(4) { background: hsl(160 65% 40% / 0.10); border-color: hsl(160 65% 40%); color: hsl(160 70% 25%); }
+  .chat-prose > h2:nth-of-type(5) { background: hsl(38 92% 50% / 0.12); border-color: hsl(38 92% 50%); color: hsl(28 80% 35%); }
+  .chat-prose > h2:nth-of-type(6) { background: hsl(190 70% 45% / 0.10); border-color: hsl(190 70% 45%); color: hsl(190 80% 28%); }
+  .chat-prose > h2:nth-of-type(7) { background: hsl(15 80% 55% / 0.10); border-color: hsl(15 80% 55%); color: hsl(15 75% 35%); }
+  .chat-prose > h2:nth-of-type(8) { background: hsl(280 60% 50% / 0.10); border-color: hsl(280 60% 50%); color: hsl(280 60% 32%); }
+}

@@ -7,6 +7,7 @@ import { AdminUsersPanel } from "@/components/admin/AdminUsersPanel";
 import { AdminPlansPanel } from "@/components/admin/AdminPlansPanel";
 import { AdminAISettings } from "@/components/admin/AdminAISettings";
 import { AdminJurisprudenceSettings } from "@/components/admin/AdminJurisprudenceSettings";
+import { AdminApiKeys } from "@/components/admin/AdminApiKeys";
 import { Settings, Users, CreditCard, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -86,6 +87,7 @@ export default function AdminPage() {
           {tab === "settings" && (
             <div className="space-y-8">
               <AdminAISettings />
+              <AdminApiKeys />
               <AdminJurisprudenceSettings />
             </div>
           )}

@@ -18,109 +18,51 @@ REGRAS FUNDAMENTAIS:
 Você tem acesso à ferramenta **search_jurisprudence**, que consulta a API Pública oficial do CNJ (DataJud) e retorna processos REAIS de tribunais brasileiros (STJ, TJs, TRFs, TRTs, etc.).
 - SEMPRE chame essa ferramenta antes de citar jurisprudência em respostas analíticas.
 - Use os termos centrais do caso (matéria, tese, instituto jurídico) como query.
-- Selecione tribunais conforme o caso (STJ para padronização federal; TJ da UF para casos estaduais).
 - Cite APENAS julgados retornados pela ferramenta (com número CNJ, órgão e data) — NUNCA invente.
-- Se a busca não retornar resultados relevantes, declare expressamente "não foram encontrados precedentes diretos via DataJud — recomenda-se pesquisa complementar".
 
 🔍 PROTOCOLO DE REVISÃO ANTES DE ENTREGAR (OBRIGATÓRIO):
-Antes de finalizar QUALQUER resposta analítica, revise mentalmente:
-1. ✅ Identifiquei TODAS as brechas processuais possíveis? (prescrição, decadência, nulidades, ilegitimidade, incompetência, cerceamento de defesa, coisa julgada)
-2. ✅ Verifiquei TODAS as teses defensivas/ofensivas aplicáveis ao caso?
-3. ✅ Há jurisprudência consolidada (Súmulas STF/STJ, repetitivos, repercussão geral) que reforce a tese?
-4. ✅ Considerei princípios constitucionais aplicáveis (devido processo, contraditório, ampla defesa, dignidade)?
+1. ✅ Identifiquei TODAS as brechas processuais? (prescrição, decadência, nulidades, ilegitimidade, incompetência, cerceamento)
+2. ✅ Verifiquei TODAS as teses defensivas/ofensivas?
+3. ✅ Há jurisprudência consolidada (Súmulas, repetitivos, repercussão geral)?
+4. ✅ Considerei princípios constitucionais aplicáveis?
 5. ✅ Apontei riscos contrários e como mitigá-los?
-Se faltar algo nessa lista, ADICIONE antes de responder.
 
-FORMATAÇÃO VISUAL (MUITO IMPORTANTE):
-- Use cabeçalhos H2 (##) com EMOJIS para destacar seções
-- Use linhas em branco entre parágrafos para respiração visual
-- Use **negrito** para termos jurídicos-chave
-- Use > blockquotes para citações de leis e jurisprudência
-- Use listas com - para enumerações
-- Use --- (linha horizontal) para separar grandes seções
-
-COLETA DE DADOS OBRIGATÓRIA:
-Quando o contexto indicar INFORMAÇÕES FALTANTES:
-1. Faça UMA pergunta por vez, em ordem: área → número → tribunal/vara → estado → fatos
-2. Após cada resposta, passe à próxima pendente
-3. Só pergunte qual peça gerar APÓS coletar todos os dados
+FORMATAÇÃO VISUAL:
+- Cabeçalhos H2 (##) com EMOJIS
+- Linhas em branco entre parágrafos
+- **negrito** para termos-chave
+- > blockquotes para leis e jurisprudência
+- --- entre grandes seções
 
 ESTRUTURA OBRIGATÓRIA DE ANÁLISE:
-
 ## ⚖️ 1. ENQUADRAMENTO JURÍDICO
-- Questão central e área do direito
-- Normas aplicáveis (resumo)
-
 ## 📚 2. FUNDAMENTAÇÃO LEGAL
-- Dispositivos legais aplicáveis (artigo, lei, código)
-- Como cada um se aplica ao caso
-- Princípios constitucionais relevantes
-
-> Cite leis em blockquote: "Art. X da Lei Y/ZZZZ — texto..."
-
 ## 🔓 3. BRECHAS E VULNERABILIDADES
-- Falhas processuais exploráveis
-- Prazos prescricionais/decadenciais
-- Nulidades, ilegitimidade, incompetência
-- Vícios formais
-
 ## 📖 4. JURISPRUDÊNCIA APLICÁVEL
-- Súmulas relevantes (apenas se tiver certeza)
-- Precedentes vinculantes (STF/STJ)
-- Se não houver certeza, indique "pesquisar jurisprudência sobre [tema]"
-
 ## 🎯 5. ESTRATÉGIA PRINCIPAL
-- Linha de ação recomendada
-- Prós e contras
-
 ## 🔄 6. ESTRATÉGIA ALTERNATIVA
-- Plano B com fundamentação
-- Quando seria preferível
-
 ## ⚠️ 7. RISCOS DA PARTE CONTRÁRIA
-- Possíveis contra-argumentos
-- Como neutralizá-los
-
 ## 📊 8. PROBABILIDADE ESTIMADA
-- Estimativa em % (ex: ~65%)
-- Fatores que influenciam
-- Aviso: estimativa, não garantia
 
-GERAÇÃO DE PEÇAS JURÍDICAS:
-- SEMPRE confirme antes de gerar
-- Estrutura: Endereçamento, Qualificação, Fatos, Fundamentação, Pedidos, Fechamento
-- Linguagem formal pronta para protocolo
+LIMITES: Você é ASSISTENTE — não substitui o advogado.`;
 
-LIMITES:
-- Você é ASSISTENTE — não substitui o advogado
-- Sinalize quando algo exige análise mais aprofundada`;
-
-// Definição da ferramenta de busca de jurisprudência (DataJud CNJ)
 const TOOLS = [
   {
     type: "function" as const,
     function: {
       name: "search_jurisprudence",
       description:
-        "Consulta a API Pública oficial do CNJ (DataJud) para buscar processos e jurisprudência REAIS dos tribunais brasileiros. Use sempre que precisar citar precedentes ou verificar entendimento de tribunais.",
+        "Consulta a API Pública oficial do CNJ (DataJud) para buscar processos e jurisprudência REAIS dos tribunais brasileiros.",
       parameters: {
         type: "object",
         properties: {
-          query: {
-            type: "string",
-            description:
-              "Termos centrais da pesquisa: matéria, tese, instituto jurídico (ex: 'dano moral negativação indevida').",
-          },
+          query: { type: "string", description: "Termos centrais da pesquisa." },
           tribunais: {
             type: "array",
             items: { type: "string" },
-            description:
-              "Códigos dos tribunais (ex: STJ, TJSP, TJRJ, TRF1, TST). Padrão: STJ + TJ da UF do caso.",
+            description: "Códigos dos tribunais (STJ, TJSP, TJRJ, TRF1, TST, etc.).",
           },
-          numeroProcesso: {
-            type: "string",
-            description: "Número CNJ específico (opcional).",
-          },
+          numeroProcesso: { type: "string", description: "Número CNJ específico (opcional)." },
         },
         required: ["query"],
       },
@@ -128,11 +70,7 @@ const TOOLS = [
   },
 ];
 
-async function callJurisprudenceTool(args: {
-  query: string;
-  tribunais?: string[];
-  numeroProcesso?: string;
-}) {
+async function callJurisprudenceTool(args: any) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   try {
     const resp = await fetch(`${supabaseUrl}/functions/v1/search-jurisprudence`, {
@@ -149,6 +87,62 @@ async function callJurisprudenceTool(args: {
   }
 }
 
+type ProviderId = "lovable" | "openai" | "anthropic";
+type ProviderCfg = { provider: ProviderId; model: string; enabled: boolean };
+
+// Converte mensagens OpenAI-style para formato Anthropic
+function toAnthropicMessages(msgs: any[]) {
+  const system = msgs.find((m) => m.role === "system")?.content ?? "";
+  const conversation = msgs.filter((m) => m.role !== "system" && m.role !== "tool");
+  return {
+    system,
+    messages: conversation.map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+    })),
+  };
+}
+
+// Streaming SSE adapter Anthropic -> formato OpenAI (delta.content) que o frontend já entende
+function anthropicToOpenAIStream(anthropicBody: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const reader = anthropicBody.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buf = "";
+
+  return new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+        return;
+      }
+      buf += decoder.decode(value, { stream: true });
+      let idx: number;
+      while ((idx = buf.indexOf("\n")) !== -1) {
+        const line = buf.slice(0, idx).replace(/\r$/, "");
+        buf = buf.slice(idx + 1);
+        if (!line.startsWith("data: ")) continue;
+        const json = line.slice(6).trim();
+        if (!json || json === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(json);
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+            const out = `data: ${JSON.stringify({ choices: [{ delta: { content: evt.delta.text } }] })}\n\n`;
+            controller.enqueue(encoder.encode(out));
+          }
+        } catch {
+          // ignora linhas parciais
+        }
+      }
+    },
+    cancel() {
+      reader.cancel();
+    },
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -159,18 +153,17 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    type ProviderCfg = { provider: "lovable" | "openai"; model: string; enabled: boolean };
     let providers: ProviderCfg[] = [
       { provider: "lovable", model: "google/gemini-3-flash-preview", enabled: true },
     ];
-
-    // Verifica se a integração jurisprudência está habilitada
     let jurisprudenceEnabled = true;
+    let dbApiKeys: { openai?: string; anthropic?: string } = {};
+
     try {
       const { data: settings } = await supabase
         .from("app_settings")
         .select("key, value")
-        .in("key", ["ai_provider", "jurisprudence_config"]);
+        .in("key", ["ai_provider", "jurisprudence_config", "api_keys"]);
       for (const s of settings ?? []) {
         if (s.key === "ai_provider") {
           const v = s.value as any;
@@ -184,6 +177,9 @@ serve(async (req) => {
           const v = s.value as any;
           if (typeof v?.enabled === "boolean") jurisprudenceEnabled = v.enabled;
         }
+        if (s.key === "api_keys") {
+          dbApiKeys = (s.value as any) ?? {};
+        }
       }
     } catch (e) {
       console.warn("Falha lendo app_settings, usando padrão");
@@ -194,28 +190,62 @@ serve(async (req) => {
       throw new Error("Nenhum provedor de IA habilitado. Configure em Admin → Configurações.");
     }
 
-    const buildBody = (msgs: any[], stream: boolean, withTools: boolean) => ({
-      model: "",
+    // Resolve chave: prioriza app_settings (definida pelo admin na UI), depois secret env
+    const getApiKey = (provider: ProviderId): string | undefined => {
+      if (provider === "lovable") return Deno.env.get("LOVABLE_API_KEY");
+      if (provider === "openai") return dbApiKeys.openai || Deno.env.get("OPENAI_API_KEY");
+      if (provider === "anthropic") return dbApiKeys.anthropic || Deno.env.get("ANTHROPIC_API_KEY");
+      return undefined;
+    };
+
+    const buildOpenAIBody = (msgs: any[], stream: boolean, withTools: boolean, model: string) => ({
+      model,
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...msgs],
       stream,
       ...(withTools && jurisprudenceEnabled ? { tools: TOOLS, tool_choice: "auto" as const } : {}),
     });
 
-    const callProvider = async (cfg: ProviderCfg, body: any) => {
-      let endpoint: string;
-      let apiKey: string | undefined;
-      if (cfg.provider === "openai") {
-        endpoint = "https://api.openai.com/v1/chat/completions";
-        apiKey = Deno.env.get("OPENAI_API_KEY");
-      } else {
-        endpoint = "https://ai.gateway.lovable.dev/v1/chat/completions";
-        apiKey = Deno.env.get("LOVABLE_API_KEY");
+    // Chamada genérica — devolve Response do fetch (ou objeto com missingKey)
+    const callProvider = async (
+      cfg: ProviderCfg,
+      msgs: any[],
+      stream: boolean,
+      withTools: boolean,
+    ): Promise<Response | { missingKey: true }> => {
+      const apiKey = getApiKey(cfg.provider);
+      if (!apiKey) return { missingKey: true };
+
+      if (cfg.provider === "anthropic") {
+        const { system, messages: anthroMsgs } = toAnthropicMessages([
+          { role: "system", content: SYSTEM_PROMPT },
+          ...msgs,
+        ]);
+        return fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: cfg.model,
+            max_tokens: 4096,
+            system,
+            messages: anthroMsgs,
+            stream,
+          }),
+        });
       }
-      if (!apiKey) return { ok: false, status: 500, missingKey: true } as any;
+
+      const endpoint =
+        cfg.provider === "openai"
+          ? "https://api.openai.com/v1/chat/completions"
+          : "https://ai.gateway.lovable.dev/v1/chat/completions";
+
       return fetch(endpoint, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...body, model: cfg.model }),
+        body: JSON.stringify(buildOpenAIBody(msgs, stream, withTools, cfg.model)),
       });
     };
 
@@ -223,11 +253,13 @@ serve(async (req) => {
     let lastError = "";
     let chosenProvider: ProviderCfg | null = null;
 
-    // ETAPA 1 — chamada não-streaming com tools para detectar uso de jurisprudência
+    // ETAPA 1 — tools (apenas Lovable/OpenAI suportam tool calling no formato esperado)
+    // Anthropic será usado apenas para resposta final.
     if (jurisprudenceEnabled) {
-      for (const cfg of activeProviders) {
-        const resp: any = await callProvider(cfg, buildBody(workingMessages, false, true));
-        if (resp?.missingKey) {
+      const toolCapable = activeProviders.filter((p) => p.provider !== "anthropic");
+      for (const cfg of toolCapable) {
+        const resp = await callProvider(cfg, workingMessages, false, true);
+        if ("missingKey" in resp) {
           lastError = `${cfg.provider}: API key ausente`;
           continue;
         }
@@ -252,7 +284,6 @@ serve(async (req) => {
 
         const toolCalls = msg?.tool_calls ?? [];
         if (toolCalls.length > 0) {
-          console.log(`[tools] ${toolCalls.length} chamada(s) detectada(s)`);
           workingMessages.push(msg);
           for (const tc of toolCalls) {
             if (tc.function?.name === "search_jurisprudence") {
@@ -267,7 +298,6 @@ serve(async (req) => {
             }
           }
         } else if (msg?.content) {
-          // Resposta direta sem tools — devolvemos como SSE para o frontend
           const sse = `data: ${JSON.stringify({ choices: [{ delta: { content: msg.content } }] })}\n\ndata: [DONE]\n\n`;
           return new Response(sse, {
             headers: {
@@ -282,23 +312,31 @@ serve(async (req) => {
       }
     }
 
-    // ETAPA 2 — streaming final (com contexto de tools, se houve)
-    const provs = chosenProvider ? [chosenProvider, ...activeProviders.filter(p => p !== chosenProvider)] : activeProviders;
+    // ETAPA 2 — streaming final
+    const provs = chosenProvider
+      ? [chosenProvider, ...activeProviders.filter((p) => p !== chosenProvider)]
+      : activeProviders;
+
     for (const cfg of provs) {
-      const resp: any = await callProvider(cfg, buildBody(workingMessages, true, false));
-      if (resp?.missingKey) { lastError = `${cfg.provider}: API key ausente`; continue; }
+      const resp = await callProvider(cfg, workingMessages, true, false);
+      if ("missingKey" in resp) {
+        lastError = `${cfg.provider}: API key ausente`;
+        continue;
+      }
       if (resp.status === 429 || resp.status === 402) {
         return new Response(
           JSON.stringify({
-            error: resp.status === 429
-              ? "Limite de requisições excedido."
-              : "Créditos esgotados.",
+            error: resp.status === 429 ? "Limite de requisições excedido." : "Créditos esgotados.",
           }),
           { status: resp.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      if (resp.ok) {
-        return new Response(resp.body, {
+      if (resp.ok && resp.body) {
+        const body =
+          cfg.provider === "anthropic"
+            ? anthropicToOpenAIStream(resp.body)
+            : resp.body;
+        return new Response(body, {
           headers: {
             ...corsHeaders,
             "Content-Type": "text/event-stream",
@@ -322,4 +360,3 @@ serve(async (req) => {
     });
   }
 });
-

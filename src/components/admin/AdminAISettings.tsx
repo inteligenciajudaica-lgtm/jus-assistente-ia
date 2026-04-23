@@ -23,7 +23,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-type ProviderId = "lovable" | "openai";
+type ProviderId = "lovable" | "openai" | "anthropic";
 
 interface ProviderConfig {
   provider: ProviderId;
@@ -47,16 +47,25 @@ const MODELS: Record<ProviderId, { id: string; label: string }[]> = {
     { id: "gpt-4-turbo", label: "GPT-4 Turbo" },
     { id: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
   ],
+  anthropic: [
+    { id: "claude-opus-4-20250514", label: "Claude Opus 4 (máxima qualidade)" },
+    { id: "claude-sonnet-4-20250514", label: "Claude Sonnet 4 (equilibrado, padrão)" },
+    { id: "claude-3-7-sonnet-20250219", label: "Claude 3.7 Sonnet" },
+    { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
+    { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku (rápido/barato)" },
+  ],
 };
 
 const PROVIDER_LABELS: Record<ProviderId, string> = {
   lovable: "Lovable AI Gateway",
   openai: "OpenAI Direto",
+  anthropic: "Anthropic Claude",
 };
 
 const PROVIDER_DESC: Record<ProviderId, string> = {
   lovable: "Acesso a Gemini e GPT-5 via gateway Lovable (sem chave externa).",
-  openai: "Usa a chave OPENAI_API_KEY configurada nos secrets.",
+  openai: "Usa a chave OPENAI_API_KEY configurada em Chaves de API.",
+  anthropic: "Usa a chave ANTHROPIC_API_KEY configurada em Chaves de API.",
 };
 
 function SortableRow({

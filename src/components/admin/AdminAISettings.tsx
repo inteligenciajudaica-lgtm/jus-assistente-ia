@@ -302,16 +302,25 @@ export function AdminAISettings() {
           >
             <Plus className="size-3 mr-1" /> OpenAI
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => addProvider("anthropic")}
+            className="h-8 text-xs"
+          >
+            <Plus className="size-3 mr-1" /> Anthropic Claude
+          </Button>
         </div>
       </div>
 
-      {providers.some((p) => p.provider === "openai" && p.enabled) && (
+      {providers.some((p) => (p.provider === "openai" || p.provider === "anthropic") && p.enabled) && (
         <div className="bg-muted/50 border border-border rounded-sm p-4 flex items-start gap-3">
           <AlertCircle className="size-4 text-warning mt-0.5 shrink-0" />
           <div className="text-xs space-y-1">
-            <p className="font-medium">Chave OpenAI necessária</p>
+            <p className="font-medium">Chaves de API necessárias</p>
             <p className="text-muted-foreground">
-              A chave <code className="text-primary bg-primary/10 px-1 rounded">OPENAI_API_KEY</code> deve estar configurada nos secrets para que o provedor OpenAI funcione.
+              Configure as chaves dos provedores externos no painel <strong>Chaves de API</strong> (logo abaixo).
+              Sem chave válida, o sistema fará fallback para o próximo provedor da lista.
             </p>
           </div>
         </div>

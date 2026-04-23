@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AdminUsersPanel } from "@/components/admin/AdminUsersPanel";
 import { AdminPlansPanel } from "@/components/admin/AdminPlansPanel";
 import { AdminAISettings } from "@/components/admin/AdminAISettings";
+import { AdminJurisprudenceSettings } from "@/components/admin/AdminJurisprudenceSettings";
 import { Settings, Users, CreditCard, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -85,23 +86,7 @@ export default function AdminPage() {
           {tab === "settings" && (
             <div className="space-y-8">
               <AdminAISettings />
-
-              <div className="bg-card border border-border rounded-sm p-6 space-y-4">
-                <h3 className="font-medium text-sm">Integrações Jurídicas</h3>
-                <p className="text-xs text-muted-foreground">
-                  Suporte a RAG e bases jurídicas externas será disponibilizado em breve.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 border border-border rounded-sm">
-                    <p className="text-sm font-medium">Planalto (Legislação)</p>
-                    <p className="text-[10px] text-muted-foreground">Em breve</p>
-                  </div>
-                  <div className="p-3 border border-border rounded-sm">
-                    <p className="text-sm font-medium">JusBrasil (Jurisprudência)</p>
-                    <p className="text-[10px] text-muted-foreground">Em breve</p>
-                  </div>
-                </div>
-              </div>
+              <AdminJurisprudenceSettings />
             </div>
           )}
         </div>

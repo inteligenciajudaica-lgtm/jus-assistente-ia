@@ -12,8 +12,15 @@ REGRAS FUNDAMENTAIS:
 - Responda sempre em português (Brasil)
 - NUNCA invente fatos, leis ou jurisprudências
 - Seja técnico, claro e direto
-- Cite jurisprudência APENAS quando tiver certeza absoluta (STF/STJ com número do julgado)
 - Priorize precisão jurídica sobre completude
+
+🔎 BUSCA DE JURISPRUDÊNCIA REAL (FERRAMENTA OBRIGATÓRIA):
+Você tem acesso à ferramenta **search_jurisprudence**, que consulta a API Pública oficial do CNJ (DataJud) e retorna processos REAIS de tribunais brasileiros (STJ, TJs, TRFs, TRTs, etc.).
+- SEMPRE chame essa ferramenta antes de citar jurisprudência em respostas analíticas.
+- Use os termos centrais do caso (matéria, tese, instituto jurídico) como query.
+- Selecione tribunais conforme o caso (STJ para padronização federal; TJ da UF para casos estaduais).
+- Cite APENAS julgados retornados pela ferramenta (com número CNJ, órgão e data) — NUNCA invente.
+- Se a busca não retornar resultados relevantes, declare expressamente "não foram encontrados precedentes diretos via DataJud — recomenda-se pesquisa complementar".
 
 🔍 PROTOCOLO DE REVISÃO ANTES DE ENTREGAR (OBRIGATÓRIO):
 Antes de finalizar QUALQUER resposta analítica, revise mentalmente:
@@ -88,87 +95,210 @@ LIMITES:
 - Você é ASSISTENTE — não substitui o advogado
 - Sinalize quando algo exige análise mais aprofundada`;
 
+// Definição da ferramenta de busca de jurisprudência (DataJud CNJ)
+const TOOLS = [
+  {
+    type: "function" as const,
+    function: {
+      name: "search_jurisprudence",
+      description:
+        "Consulta a API Pública oficial do CNJ (DataJud) para buscar processos e jurisprudência REAIS dos tribunais brasileiros. Use sempre que precisar citar precedentes ou verificar entendimento de tribunais.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description:
+              "Termos centrais da pesquisa: matéria, tese, instituto jurídico (ex: 'dano moral negativação indevida').",
+          },
+          tribunais: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Códigos dos tribunais (ex: STJ, TJSP, TJRJ, TRF1, TST). Padrão: STJ + TJ da UF do caso.",
+          },
+          numeroProcesso: {
+            type: "string",
+            description: "Número CNJ específico (opcional).",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+];
+
+async function callJurisprudenceTool(args: {
+  query: string;
+  tribunais?: string[];
+  numeroProcesso?: string;
+}) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  try {
+    const resp = await fetch(`${supabaseUrl}/functions/v1/search-jurisprudence`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+      },
+      body: JSON.stringify(args),
+    });
+    return await resp.json();
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "erro" };
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { messages } = await req.json();
 
-    // Lê configuração de provedor de IA (Lovable ou OpenAI)
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Lista de provedores ordenada por prioridade (com fallback)
     type ProviderCfg = { provider: "lovable" | "openai"; model: string; enabled: boolean };
     let providers: ProviderCfg[] = [
       { provider: "lovable", model: "google/gemini-3-flash-preview", enabled: true },
     ];
+
+    // Verifica se a integração jurisprudência está habilitada
+    let jurisprudenceEnabled = true;
     try {
-      const { data: setting } = await supabase
+      const { data: settings } = await supabase
         .from("app_settings")
-        .select("value")
-        .eq("key", "ai_provider")
-        .maybeSingle();
-      const v = setting?.value as any;
-      if (v && Array.isArray(v.providers) && v.providers.length > 0) {
-        providers = v.providers;
-      } else if (v?.provider) {
-        // Compatibilidade com formato antigo
-        providers = [{ provider: v.provider, model: v.model, enabled: true }];
+        .select("key, value")
+        .in("key", ["ai_provider", "jurisprudence_config"]);
+      for (const s of settings ?? []) {
+        if (s.key === "ai_provider") {
+          const v = s.value as any;
+          if (v && Array.isArray(v.providers) && v.providers.length > 0) {
+            providers = v.providers;
+          } else if (v?.provider) {
+            providers = [{ provider: v.provider, model: v.model, enabled: true }];
+          }
+        }
+        if (s.key === "jurisprudence_config") {
+          const v = s.value as any;
+          if (typeof v?.enabled === "boolean") jurisprudenceEnabled = v.enabled;
+        }
       }
     } catch (e) {
-      console.warn("Não foi possível ler app_settings, usando padrão Lovable AI");
+      console.warn("Falha lendo app_settings, usando padrão");
     }
 
     const activeProviders = providers.filter((p) => p.enabled);
     if (activeProviders.length === 0) {
-      throw new Error("Nenhum provedor de IA está habilitado. Configure em Admin → Configurações.");
+      throw new Error("Nenhum provedor de IA habilitado. Configure em Admin → Configurações.");
     }
 
-    let lastError = "";
-    for (const cfg of activeProviders) {
+    const buildBody = (msgs: any[], stream: boolean, withTools: boolean) => ({
+      model: "",
+      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...msgs],
+      stream,
+      ...(withTools && jurisprudenceEnabled ? { tools: TOOLS, tool_choice: "auto" as const } : {}),
+    });
+
+    const callProvider = async (cfg: ProviderCfg, body: any) => {
       let endpoint: string;
       let apiKey: string | undefined;
-
       if (cfg.provider === "openai") {
         endpoint = "https://api.openai.com/v1/chat/completions";
         apiKey = Deno.env.get("OPENAI_API_KEY");
-        if (!apiKey) {
-          lastError = "OPENAI_API_KEY não configurada";
-          console.warn(`[fallback] ${lastError}, tentando próximo provedor...`);
-          continue;
-        }
       } else {
         endpoint = "https://ai.gateway.lovable.dev/v1/chat/completions";
         apiKey = Deno.env.get("LOVABLE_API_KEY");
-        if (!apiKey) {
-          lastError = "LOVABLE_API_KEY não configurada";
-          console.warn(`[fallback] ${lastError}, tentando próximo provedor...`);
+      }
+      if (!apiKey) return { ok: false, status: 500, missingKey: true } as any;
+      return fetch(endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...body, model: cfg.model }),
+      });
+    };
+
+    let workingMessages = [...messages];
+    let lastError = "";
+    let chosenProvider: ProviderCfg | null = null;
+
+    // ETAPA 1 — chamada não-streaming com tools para detectar uso de jurisprudência
+    if (jurisprudenceEnabled) {
+      for (const cfg of activeProviders) {
+        const resp: any = await callProvider(cfg, buildBody(workingMessages, false, true));
+        if (resp?.missingKey) {
+          lastError = `${cfg.provider}: API key ausente`;
           continue;
         }
+        if (resp.status === 429 || resp.status === 402) {
+          return new Response(
+            JSON.stringify({
+              error:
+                resp.status === 429
+                  ? "Limite de requisições excedido. Tente novamente em alguns instantes."
+                  : "Créditos esgotados. Adicione créditos em Configurações > Workspace > Uso.",
+            }),
+            { status: resp.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+        if (!resp.ok) {
+          lastError = `${cfg.provider} ${resp.status}: ${(await resp.text()).slice(0, 200)}`;
+          continue;
+        }
+        const data = await resp.json();
+        const msg = data?.choices?.[0]?.message;
+        chosenProvider = cfg;
+
+        const toolCalls = msg?.tool_calls ?? [];
+        if (toolCalls.length > 0) {
+          console.log(`[tools] ${toolCalls.length} chamada(s) detectada(s)`);
+          workingMessages.push(msg);
+          for (const tc of toolCalls) {
+            if (tc.function?.name === "search_jurisprudence") {
+              let args: any = {};
+              try { args = JSON.parse(tc.function.arguments ?? "{}"); } catch {}
+              const result = await callJurisprudenceTool(args);
+              workingMessages.push({
+                role: "tool",
+                tool_call_id: tc.id,
+                content: JSON.stringify(result).slice(0, 12000),
+              });
+            }
+          }
+        } else if (msg?.content) {
+          // Resposta direta sem tools — devolvemos como SSE para o frontend
+          const sse = `data: ${JSON.stringify({ choices: [{ delta: { content: msg.content } }] })}\n\ndata: [DONE]\n\n`;
+          return new Response(sse, {
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "text/event-stream",
+              "X-AI-Provider": cfg.provider,
+              "X-AI-Model": cfg.model,
+            },
+          });
+        }
+        break;
       }
+    }
 
-      console.log(`[ai] Tentando provedor: ${cfg.provider} (${cfg.model})`);
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: cfg.model,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            ...messages,
-          ],
-          stream: true,
-        }),
-      });
-
-      if (response.ok) {
-        return new Response(response.body, {
+    // ETAPA 2 — streaming final (com contexto de tools, se houve)
+    const provs = chosenProvider ? [chosenProvider, ...activeProviders.filter(p => p !== chosenProvider)] : activeProviders;
+    for (const cfg of provs) {
+      const resp: any = await callProvider(cfg, buildBody(workingMessages, true, false));
+      if (resp?.missingKey) { lastError = `${cfg.provider}: API key ausente`; continue; }
+      if (resp.status === 429 || resp.status === 402) {
+        return new Response(
+          JSON.stringify({
+            error: resp.status === 429
+              ? "Limite de requisições excedido."
+              : "Créditos esgotados.",
+          }),
+          { status: resp.status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (resp.ok) {
+        return new Response(resp.body, {
           headers: {
             ...corsHeaders,
             "Content-Type": "text/event-stream",
@@ -177,25 +307,7 @@ serve(async (req) => {
           },
         });
       }
-
-      // Erros não recuperáveis (rate limit / créditos) — retornar imediatamente
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns instantes." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos esgotados. Adicione créditos em Configurações > Workspace > Uso." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const t = await response.text();
-      lastError = `${cfg.provider} retornou ${response.status}: ${t.slice(0, 200)}`;
-      console.error(`[fallback] ${lastError}`);
-      // tenta próximo
+      lastError = `${cfg.provider} ${resp.status}: ${(await resp.text()).slice(0, 200)}`;
     }
 
     return new Response(JSON.stringify({ error: `Todos os provedores falharam. Último erro: ${lastError}` }), {
@@ -210,3 +322,4 @@ serve(async (req) => {
     });
   }
 });
+

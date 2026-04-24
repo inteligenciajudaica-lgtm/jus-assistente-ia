@@ -32,14 +32,20 @@ export function StatsCards() {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-4">
-      {cards.map((s) => (
-        <div key={s.label} className="bg-card border border-border rounded-sm p-5">
-          <div className="flex items-center justify-between mb-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {cards.map((s, i) => (
+        <div
+          key={s.label}
+          className="surface-card rounded-lg p-5 group hover:-translate-y-0.5 animate-slide-up"
+          style={{ animationDelay: `${i * 60}ms` }}
+        >
+          <div className="flex items-center justify-between mb-4">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{s.label}</p>
-            <s.icon className={`size-4 ${s.accent ? "text-warning" : "text-muted-foreground/50"}`} />
+            <div className={`size-8 rounded-md flex items-center justify-center transition-colors ${s.accent ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground/70 group-hover:bg-accent/10 group-hover:text-accent"}`}>
+              <s.icon className="size-4" />
+            </div>
           </div>
-          <p className="text-3xl font-semibold tracking-tight">{s.value}</p>
+          <p className="text-3xl font-semibold tracking-tight tabular-nums">{s.value}</p>
           <p className="text-xs text-muted-foreground mt-1">{s.sub}</p>
         </div>
       ))}

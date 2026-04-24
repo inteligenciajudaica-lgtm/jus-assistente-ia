@@ -36,8 +36,13 @@ const Index = () => {
               onBack={() => setSelectedCaseId(null)}
             />
           ) : (
-            <section className="flex-1 overflow-y-auto p-8 space-y-6">
-              <h1 className="text-xl font-medium">Painel de Monitoramento</h1>
+            <section className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 animate-fade-in">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Visão geral</p>
+                  <h1 className="text-2xl font-semibold tracking-tight">Painel de Monitoramento</h1>
+                </div>
+              </div>
               <StatsCards key={`stats-${refreshKey}`} />
               <CasesTable
                 key={`cases-${refreshKey}`}

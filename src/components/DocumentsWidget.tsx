@@ -61,13 +61,18 @@ export function DocumentsWidget() {
   };
 
   return (
-    <div className="bg-card border border-border p-5 rounded-sm">
+    <div className="surface-card p-5 rounded-xl">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-medium text-sm">Documentos</h3>
+        <div className="flex items-center gap-2">
+          <div className="size-7 rounded-md bg-accent/10 flex items-center justify-center">
+            <FileText className="size-3.5 text-accent" />
+          </div>
+          <h3 className="font-semibold text-sm tracking-tight">Documentos recentes</h3>
+        </div>
         <DocumentUploadDialog onUploaded={() => setRefreshKey((k) => k + 1)} />
       </div>
       {docs.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">
+        <p className="text-sm text-muted-foreground text-center py-8">
           Nenhum documento enviado ainda.
         </p>
       ) : (
@@ -75,15 +80,17 @@ export function DocumentsWidget() {
           {docs.map((doc) => (
             <div
               key={doc.id}
-              className="flex items-center gap-3 p-3 border border-border bg-muted/30 rounded-sm hover:bg-muted/60 transition-colors cursor-pointer group"
+              className="flex items-center gap-3 p-3 border border-border bg-muted/30 rounded-lg hover:bg-muted/60 hover:border-accent/30 surface-interactive cursor-pointer group"
               onClick={() => handleDownload(doc)}
             >
-              {docIcon(doc.file_type)}
+              <div className="size-9 rounded-md bg-background border border-border flex items-center justify-center shrink-0">
+                {docIcon(doc.file_type)}
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{doc.name}</p>
-                <p className="text-xs text-muted-foreground">{formatSize(doc.file_size)} · {timeAgo(doc.created_at)}</p>
+                <p className="text-xs text-muted-foreground tabular-nums">{formatSize(doc.file_size)} · {timeAgo(doc.created_at)}</p>
               </div>
-              <Download className="size-3.5 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Download className="size-4 text-muted-foreground/50 opacity-0 group-hover:opacity-100 group-hover:text-accent transition-all" />
             </div>
           ))}
         </div>

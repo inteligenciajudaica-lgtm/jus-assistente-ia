@@ -36,13 +36,27 @@ const Index = () => {
               onBack={() => setSelectedCaseId(null)}
             />
           ) : (
-            <section className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6 animate-fade-in">
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">Visão geral</p>
-                  <h1 className="text-2xl font-semibold tracking-tight">Painel de Monitoramento</h1>
+            <section className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8 animate-fade-in">
+              {/* Hero */}
+              <div className="relative rounded-2xl border border-border bg-gradient-card overflow-hidden p-8 lg:p-10">
+                <div className="absolute inset-0 bg-grid opacity-50 pointer-events-none" />
+                <div className="absolute -top-24 -right-24 size-72 rounded-full bg-gradient-primary opacity-20 blur-3xl pointer-events-none" />
+                <div className="relative flex items-end justify-between gap-6 flex-wrap">
+                  <div className="max-w-2xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-[11px] font-medium text-accent mb-4">
+                      <span className="size-1.5 rounded-full bg-accent animate-glow-pulse" />
+                      Visão geral em tempo real
+                    </div>
+                    <h1 className="text-4xl lg:text-5xl font-semibold tracking-tight text-balance">
+                      Painel de <span className="font-display italic text-gradient-primary">Monitoramento</span>
+                    </h1>
+                    <p className="text-muted-foreground mt-3 text-pretty max-w-xl">
+                      Acompanhe seus processos, prazos e produção documental em um só lugar — com o copiloto JURIS AI ao seu lado.
+                    </p>
+                  </div>
                 </div>
               </div>
+
               <StatsCards key={`stats-${refreshKey}`} />
               <CasesTable
                 key={`cases-${refreshKey}`}

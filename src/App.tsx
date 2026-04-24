@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import AdminPage from "./pages/AdminPage";
@@ -38,25 +39,27 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/processos" element={<ProtectedRoute><ProcessosPage /></ProtectedRoute>} />
-            <Route path="/prazos" element={<ProtectedRoute><PrazosPage /></ProtectedRoute>} />
-            <Route path="/documentos" element={<ProtectedRoute><DocumentosPage /></ProtectedRoute>} />
-            <Route path="/conversas" element={<ProtectedRoute><ConversasPage /></ProtectedRoute>} />
-            <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<AuthRoute><AuthPage /></AuthRoute>} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/processos" element={<ProtectedRoute><ProcessosPage /></ProtectedRoute>} />
+              <Route path="/prazos" element={<ProtectedRoute><PrazosPage /></ProtectedRoute>} />
+              <Route path="/documentos" element={<ProtectedRoute><DocumentosPage /></ProtectedRoute>} />
+              <Route path="/conversas" element={<ProtectedRoute><ConversasPage /></ProtectedRoute>} />
+              <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

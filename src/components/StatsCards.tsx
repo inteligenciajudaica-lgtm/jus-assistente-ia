@@ -25,10 +25,10 @@ export function StatsCards() {
   }, [user]);
 
   const cards = [
-    { icon: FolderOpen, label: "Processos Ativos", value: stats.cases.toString().padStart(2, "0"), sub: "Total cadastrado" },
-    { icon: FileEdit, label: "Documentos", value: stats.documents.toString().padStart(2, "0"), sub: "Arquivos anexados" },
-    { icon: Calendar, label: "Conversas IA", value: stats.conversations.toString().padStart(2, "0"), sub: "Sessões do copiloto" },
-    { icon: AlertTriangle, label: "Prazos", value: "—", sub: "Em breve", accent: true },
+    { icon: FolderOpen, label: "Processos Ativos", value: stats.cases.toString().padStart(2, "0"), sub: "Total cadastrado", tint: "from-violet-500/15 to-violet-500/0", icoBg: "bg-violet-500/15 text-violet-500" },
+    { icon: FileEdit, label: "Documentos", value: stats.documents.toString().padStart(2, "0"), sub: "Arquivos anexados", tint: "from-blue-500/15 to-blue-500/0", icoBg: "bg-blue-500/15 text-blue-500" },
+    { icon: Calendar, label: "Conversas IA", value: stats.conversations.toString().padStart(2, "0"), sub: "Sessões do copiloto", tint: "from-fuchsia-500/15 to-fuchsia-500/0", icoBg: "bg-fuchsia-500/15 text-fuchsia-500" },
+    { icon: AlertTriangle, label: "Prazos", value: "—", sub: "Em breve", tint: "from-amber-500/15 to-amber-500/0", icoBg: "bg-amber-500/15 text-amber-500", accent: true },
   ];
 
   return (
@@ -36,17 +36,19 @@ export function StatsCards() {
       {cards.map((s, i) => (
         <div
           key={s.label}
-          className="surface-card rounded-lg p-5 group hover:-translate-y-0.5 animate-slide-up"
-          style={{ animationDelay: `${i * 60}ms` }}
+          className="relative surface-card rounded-xl p-5 group hover:-translate-y-1 hover:shadow-md-soft animate-slide-up overflow-hidden"
+          style={{ animationDelay: `${i * 70}ms` }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{s.label}</p>
-            <div className={`size-8 rounded-md flex items-center justify-center transition-colors ${s.accent ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground/70 group-hover:bg-accent/10 group-hover:text-accent"}`}>
-              <s.icon className="size-4" />
+          {/* Tint corner */}
+          <div className={`absolute -top-12 -right-12 size-32 rounded-full bg-gradient-to-br ${s.tint} blur-2xl opacity-80 transition-opacity group-hover:opacity-100`} />
+          <div className="relative flex items-center justify-between mb-4">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.18em]">{s.label}</p>
+            <div className={`size-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 ${s.icoBg}`}>
+              <s.icon className="size-[18px]" />
             </div>
           </div>
-          <p className="text-3xl font-semibold tracking-tight tabular-nums">{s.value}</p>
-          <p className="text-xs text-muted-foreground mt-1">{s.sub}</p>
+          <p className="relative text-4xl font-semibold tracking-tight tabular-nums">{s.value}</p>
+          <p className="relative text-xs text-muted-foreground mt-1.5">{s.sub}</p>
         </div>
       ))}
     </div>

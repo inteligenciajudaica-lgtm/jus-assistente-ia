@@ -75,7 +75,7 @@ export function CasesTable({ onSelectCase, selectedCaseId }: CasesTableProps) {
 
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-sm p-8 text-center text-muted-foreground text-sm">
+      <div className="surface-card rounded-lg p-10 text-center text-muted-foreground text-sm animate-fade-in">
         Carregando processos...
       </div>
     );
@@ -83,17 +83,17 @@ export function CasesTable({ onSelectCase, selectedCaseId }: CasesTableProps) {
 
   if (cases.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-sm p-8 text-center text-muted-foreground text-sm">
+      <div className="surface-card rounded-lg p-10 text-center text-muted-foreground text-sm animate-fade-in">
         Nenhum processo cadastrado. Clique em "Novo Processo" para começar.
       </div>
     );
   }
 
   return (
-    <div className="bg-card border border-border rounded-sm overflow-hidden">
+    <div className="surface-card rounded-lg overflow-hidden animate-fade-in">
       {/* Search bar */}
-      <div className="p-3 border-b border-border">
-        <div className="flex items-center bg-background border border-border rounded-sm px-3 py-1.5">
+      <div className="p-3 border-b border-border bg-muted/30">
+        <div className="flex items-center bg-background border border-border rounded-md px-3 py-1.5 surface-interactive focus-within:border-accent/50 focus-within:shadow-[var(--shadow-focus)]">
           <Search className="size-3.5 text-muted-foreground mr-2" />
           <input
             type="text"
@@ -102,43 +102,48 @@ export function CasesTable({ onSelectCase, selectedCaseId }: CasesTableProps) {
             placeholder="Filtrar processos..."
             className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/60"
           />
-          <span className="text-xs text-muted-foreground ml-2">{filtered.length}</span>
+          <span className="text-[10px] text-muted-foreground ml-2 px-1.5 py-0.5 rounded bg-muted tabular-nums">{filtered.length}</span>
         </div>
       </div>
 
-      <table className="w-full text-left text-sm">
-        <thead className="bg-muted text-muted-foreground font-medium">
-          <tr>
-            <th className="font-medium px-4 py-3">Nº Processo</th>
-            <th className="font-medium px-4 py-3">Cliente</th>
-            <th className="font-medium px-4 py-3">Tribunal</th>
-            <th className="font-medium px-4 py-3">Área</th>
-            <th className="font-medium px-4 py-3">Status</th>
-            <th className="font-medium px-4 py-3 text-right">Atualização</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {filtered.map((c) => (
-            <tr
-              key={c.id}
-              onClick={() => onSelectCase?.(c.id)}
-              className={`hover:bg-muted/50 transition-colors cursor-pointer ${selectedCaseId === c.id ? "bg-primary/5 border-l-2 border-l-primary" : ""}`}
-            >
-              <td className="px-4 py-3 font-mono text-xs font-medium">{c.case_number || "—"}</td>
-              <td className="px-4 py-3 font-medium">{c.client_name}</td>
-              <td className="px-4 py-3 text-muted-foreground text-xs">{c.court ? `${c.court}${c.court_division ? ` - ${c.court_division}` : ""}` : "—"}</td>
-              <td className="px-4 py-3 text-muted-foreground text-xs">{c.area_of_law || "—"}</td>
-              <td className="px-4 py-3">
-                <span className="inline-flex items-center gap-1.5 text-xs">
-                  <div className={`size-1.5 rounded-full ${statusColors[c.status] || "bg-muted-foreground/40"}`} />
-                  {statusLabels[c.status] || c.status}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-right text-muted-foreground tabular-nums text-xs">{formatDate(c.updated_at)}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-muted/50 text-muted-foreground">
+            <tr>
+              <th className="font-medium px-4 py-2.5 text-[11px] uppercase tracking-wider">Nº Processo</th>
+              <th className="font-medium px-4 py-2.5 text-[11px] uppercase tracking-wider">Cliente</th>
+              <th className="font-medium px-4 py-2.5 text-[11px] uppercase tracking-wider">Tribunal</th>
+              <th className="font-medium px-4 py-2.5 text-[11px] uppercase tracking-wider">Área</th>
+              <th className="font-medium px-4 py-2.5 text-[11px] uppercase tracking-wider">Status</th>
+              <th className="font-medium px-4 py-2.5 text-[11px] uppercase tracking-wider text-right">Atualização</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filtered.map((c) => (
+              <tr
+                key={c.id}
+                onClick={() => onSelectCase?.(c.id)}
+                className={`surface-interactive cursor-pointer ${selectedCaseId === c.id ? "bg-accent/5" : "hover:bg-muted/40"}`}
+              >
+                <td className={`px-4 py-3 font-mono text-xs font-medium relative ${selectedCaseId === c.id ? "text-accent" : ""}`}>
+                  {selectedCaseId === c.id && <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-accent rounded-r" />}
+                  {c.case_number || "—"}
+                </td>
+                <td className="px-4 py-3 font-medium">{c.client_name}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">{c.court ? `${c.court}${c.court_division ? ` - ${c.court_division}` : ""}` : "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">{c.area_of_law || "—"}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-muted/60 border border-border/60">
+                    <div className={`size-1.5 rounded-full ${statusColors[c.status] || "bg-muted-foreground/40"}`} />
+                    {statusLabels[c.status] || c.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right text-muted-foreground tabular-nums text-xs">{formatDate(c.updated_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

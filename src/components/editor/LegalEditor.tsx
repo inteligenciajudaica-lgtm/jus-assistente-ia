@@ -117,19 +117,84 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
     }, 2000);
   }, [documentId]);
 
-  // Aplica destaque visual de revisão (sobreposição CSS, não modifica conteúdo)
+  // Aplica destaque visual de revisão (overlay no DOM, sem alterar estado do TipTap)
   useEffect(() => {
     if (!editor) return;
     const dom = editor.view.dom as HTMLElement;
-    // Conta inicial de revisões
+
+    const applyHighlights = () => {
+      dom.querySelectorAll("span.legal-revision").forEach((el) => {
+        const parent = el.parentNode;
+        if (parent) {
+          parent.replaceChild(document.createTextNode(el.textContent || ""), el);
+          parent.normalize();
+        }
+      });
+
+      let count = 0;
+      const walker = document.createTreeWalker(dom, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+          if (!node.textContent?.trim()) return NodeFilter.FILTER_REJECT;
+          const parent = node.parentElement;
+          if (parent?.closest(".legal-revision")) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+
+      const textNodes: Text[] = [];
+      let n: Node | null;
+      while ((n = walker.nextNode())) textNodes.push(n as Text);
+
+      textNodes.forEach((textNode) => {
+        const text = textNode.textContent || "";
+        const matches: { start: number; end: number; reason: string }[] = [];
+        REVISION_PATTERNS.forEach(({ regex, reason }) => {
+          const re = new RegExp(regex.source, regex.flags);
+          let m;
+          while ((m = re.exec(text)) !== null) {
+            matches.push({ start: m.index, end: m.index + m[0].length, reason });
+          }
+        });
+        if (!matches.length) return;
+        matches.sort((a, b) => a.start - b.start);
+
+        const frag = document.createDocumentFragment();
+        let cursor = 0;
+        matches.forEach((match) => {
+          if (match.start < cursor) return;
+          if (match.start > cursor) frag.appendChild(document.createTextNode(text.slice(cursor, match.start)));
+          const span = document.createElement("span");
+          span.className = "legal-revision";
+          span.setAttribute("data-reason", match.reason);
+          span.setAttribute("contenteditable", "false");
+          span.textContent = text.slice(match.start, match.end);
+          frag.appendChild(span);
+          cursor = match.end;
+          count++;
+        });
+        if (cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
+        textNode.parentNode?.replaceChild(frag, textNode);
+      });
+
+      setRevisionCount(count);
+    };
+
+    let timer: NodeJS.Timeout;
+    const debounced = () => {
+      clearTimeout(timer);
+      timer = setTimeout(applyHighlights, 600);
+    };
+
+    editor.on("update", debounced);
+    applyHighlights();
+
     const text = editor.getText();
-    let count = 0;
-    REVISION_PATTERNS.forEach(({ regex }) => {
-      const matches = text.match(regex);
-      if (matches) count += matches.length;
-    });
-    setRevisionCount(count);
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
+
+    return () => {
+      clearTimeout(timer);
+      editor.off("update", debounced);
+    };
   }, [editor]);
 
   if (!editor) return null;

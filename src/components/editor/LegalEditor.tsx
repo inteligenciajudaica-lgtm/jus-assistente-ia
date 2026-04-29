@@ -34,17 +34,6 @@ const REVISION_PATTERNS: { regex: RegExp; reason: string }[] = [
   { regex: /\bpor\s+derradeiro\b/gi, reason: "Arcaísmo — prefira 'por fim'" },
 ];
 
-function highlightRevisionsHTML(html: string): string {
-  // Aplica spans de destaque APENAS visualmente sobre termos suspeitos.
-  // Mantém o HTML original intacto fora dos matches.
-  let result = html;
-  REVISION_PATTERNS.forEach(({ regex, reason }) => {
-    result = result.replace(regex, (match) => {
-      return `<span class="legal-revision" data-reason="${reason.replace(/"/g, "&quot;")}">${match}</span>`;
-    });
-  });
-  return result;
-}
 
 export function LegalEditor({ documentId, initialContent, title, documentType }: LegalEditorProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");

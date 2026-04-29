@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { FileText, ScrollText, Gavel, FileCheck, ChevronRight } from "lucide-react";
+import { FileText, ScrollText, Gavel, FileCheck, ChevronRight, ArrowLeft } from "lucide-react";
+import { LegalEditor } from "@/components/editor/LegalEditor";
 
 interface GenDoc {
   id: string;
@@ -76,23 +77,44 @@ export function GeneratedDocsPanel({ caseId, refreshKey, fullPage }: GeneratedDo
       )}
 
       {selectedDoc ? (
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <button
-            onClick={() => setSelectedDoc(null)}
-            className="px-3 py-2 text-xs text-primary hover:underline text-left border-b border-border"
-          >
-            ← Voltar à lista
-          </button>
-          <div className={fullPage ? "px-6 py-3 border-b border-border" : "px-3 py-2 border-b border-border"}>
-            <p className={fullPage ? "text-sm font-medium" : "text-xs font-medium"}>{selectedDoc.title}</p>
-            <p className={fullPage ? "text-xs text-muted-foreground" : "text-[10px] text-muted-foreground"}>{selectedDoc.document_type} · {formatDate(selectedDoc.created_at)}</p>
+        fullPage ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-card/60 backdrop-blur-sm shrink-0">
+              <button
+                onClick={() => setSelectedDoc(null)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent"
+              >
+                <ArrowLeft className="size-3.5" />
+                Voltar à lista
+              </button>
+            </div>
+            <LegalEditor
+              key={selectedDoc.id}
+              documentId={selectedDoc.id}
+              initialContent={selectedDoc.content}
+              title={selectedDoc.title}
+              documentType={selectedDoc.document_type}
+            />
           </div>
-          <div className={fullPage ? "flex-1 overflow-y-auto p-6" : "flex-1 overflow-y-auto p-3"}>
-            <pre className={`${fullPage ? "text-sm max-w-3xl mx-auto" : "text-[11px]"} leading-relaxed whitespace-pre-wrap font-sans text-foreground/90`}>
-              {selectedDoc.content}
-            </pre>
+        ) : (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <button
+              onClick={() => setSelectedDoc(null)}
+              className="px-3 py-2 text-xs text-primary hover:underline text-left border-b border-border"
+            >
+              ← Voltar à lista
+            </button>
+            <div className="px-3 py-2 border-b border-border">
+              <p className="text-xs font-medium">{selectedDoc.title}</p>
+              <p className="text-[10px] text-muted-foreground">{selectedDoc.document_type} · {formatDate(selectedDoc.created_at)}</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              <pre className="text-[11px] leading-relaxed whitespace-pre-wrap font-sans text-foreground/90">
+                {selectedDoc.content}
+              </pre>
+            </div>
           </div>
-        </div>
+        )
       ) : (
         <div className="flex-1 overflow-y-auto">
           {loading ? (

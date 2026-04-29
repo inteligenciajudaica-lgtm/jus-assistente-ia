@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { FileText, ScrollText, Gavel, FileCheck, ChevronRight } from "lucide-react";
+import { FileText, ScrollText, Gavel, FileCheck, ChevronRight, ArrowLeft } from "lucide-react";
+import { LegalEditor } from "@/components/editor/LegalEditor";
 
 interface GenDoc {
   id: string;

@@ -36,6 +36,62 @@ const REVISION_PATTERNS: { regex: RegExp; reason: string }[] = [
   { regex: /\bpor\s+derradeiro\b/gi, reason: "Arcaísmo — prefira 'por fim'" },
 ];
 
+const revisionPluginKey = new PluginKey("legal-revision");
+
+function buildRevisionDecorations(doc: any): { decos: DecorationSet; count: number } {
+  const decorations: Decoration[] = [];
+  let count = 0;
+  doc.descendants((node: any, pos: number) => {
+    if (!node.isText) return;
+    const text: string = node.text || "";
+    REVISION_PATTERNS.forEach(({ regex, reason }) => {
+      const re = new RegExp(regex.source, regex.flags);
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        const from = pos + m.index;
+        const to = from + m[0].length;
+        decorations.push(
+          Decoration.inline(from, to, {
+            class: "legal-revision",
+            "data-reason": reason,
+          })
+        );
+        count++;
+      }
+    });
+  });
+  return { decos: DecorationSet.create(doc, decorations), count };
+}
+
+const createRevisionExtension = (onCount: (n: number) => void) =>
+  Extension.create({
+    name: "revisionHighlight",
+    addProseMirrorPlugins() {
+      return [
+        new Plugin({
+          key: revisionPluginKey,
+          state: {
+            init(_, { doc }) {
+              const { decos, count } = buildRevisionDecorations(doc);
+              queueMicrotask(() => onCount(count));
+              return decos;
+            },
+            apply(tr, old) {
+              if (!tr.docChanged) return old.map(tr.mapping, tr.doc);
+              const { decos, count } = buildRevisionDecorations(tr.doc);
+              queueMicrotask(() => onCount(count));
+              return decos;
+            },
+          },
+          props: {
+            decorations(state) {
+              return this.getState(state);
+            },
+          },
+        }),
+      ];
+    },
+  });
 
 export function LegalEditor({ documentId, initialContent, title, documentType }: LegalEditorProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");

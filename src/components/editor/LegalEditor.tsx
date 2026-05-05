@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useEditor, EditorContent, Editor } from "@tiptap/react";
+import { useEditor, EditorContent, Editor, Extension } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
 import Highlight from "@tiptap/extension-highlight";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -34,6 +36,62 @@ const REVISION_PATTERNS: { regex: RegExp; reason: string }[] = [
   { regex: /\bpor\s+derradeiro\b/gi, reason: "Arcaísmo — prefira 'por fim'" },
 ];
 
+const revisionPluginKey = new PluginKey("legal-revision");
+
+function buildRevisionDecorations(doc: any): { decos: DecorationSet; count: number } {
+  const decorations: Decoration[] = [];
+  let count = 0;
+  doc.descendants((node: any, pos: number) => {
+    if (!node.isText) return;
+    const text: string = node.text || "";
+    REVISION_PATTERNS.forEach(({ regex, reason }) => {
+      const re = new RegExp(regex.source, regex.flags);
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        const from = pos + m.index;
+        const to = from + m[0].length;
+        decorations.push(
+          Decoration.inline(from, to, {
+            class: "legal-revision",
+            "data-reason": reason,
+          })
+        );
+        count++;
+      }
+    });
+  });
+  return { decos: DecorationSet.create(doc, decorations), count };
+}
+
+const createRevisionExtension = (onCount: (n: number) => void) =>
+  Extension.create({
+    name: "revisionHighlight",
+    addProseMirrorPlugins() {
+      return [
+        new Plugin({
+          key: revisionPluginKey,
+          state: {
+            init(_, { doc }) {
+              const { decos, count } = buildRevisionDecorations(doc);
+              queueMicrotask(() => onCount(count));
+              return decos;
+            },
+            apply(tr, old) {
+              if (!tr.docChanged) return old.map(tr.mapping, tr.doc);
+              const { decos, count } = buildRevisionDecorations(tr.doc);
+              queueMicrotask(() => onCount(count));
+              return decos;
+            },
+          },
+          props: {
+            decorations(state) {
+              return this.getState(state);
+            },
+          },
+        }),
+      ];
+    },
+  });
 
 export function LegalEditor({ documentId, initialContent, title, documentType }: LegalEditorProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -61,6 +119,7 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
       Placeholder.configure({
         placeholder: "Comece a escrever sua peça jurídica...",
       }),
+      createRevisionExtension(setRevisionCount),
     ],
     content: initialHTML,
     editorProps: {
@@ -71,15 +130,6 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
     onUpdate: ({ editor }) => {
       const text = editor.getText();
       setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
-
-      // Conta revisões visuais
-      let count = 0;
-      REVISION_PATTERNS.forEach(({ regex }) => {
-        const matches = text.match(regex);
-        if (matches) count += matches.length;
-      });
-      setRevisionCount(count);
-
       scheduleAutosave(editor);
     },
   });
@@ -106,84 +156,11 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
     }, 2000);
   }, [documentId]);
 
-  // Aplica destaque visual de revisão (overlay no DOM, sem alterar estado do TipTap)
+  // Inicializa contagem de palavras no carregamento
   useEffect(() => {
     if (!editor) return;
-    const dom = editor.view.dom as HTMLElement;
-
-    const applyHighlights = () => {
-      dom.querySelectorAll("span.legal-revision").forEach((el) => {
-        const parent = el.parentNode;
-        if (parent) {
-          parent.replaceChild(document.createTextNode(el.textContent || ""), el);
-          parent.normalize();
-        }
-      });
-
-      let count = 0;
-      const walker = document.createTreeWalker(dom, NodeFilter.SHOW_TEXT, {
-        acceptNode: (node) => {
-          if (!node.textContent?.trim()) return NodeFilter.FILTER_REJECT;
-          const parent = node.parentElement;
-          if (parent?.closest(".legal-revision")) return NodeFilter.FILTER_REJECT;
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      });
-
-      const textNodes: Text[] = [];
-      let n: Node | null;
-      while ((n = walker.nextNode())) textNodes.push(n as Text);
-
-      textNodes.forEach((textNode) => {
-        const text = textNode.textContent || "";
-        const matches: { start: number; end: number; reason: string }[] = [];
-        REVISION_PATTERNS.forEach(({ regex, reason }) => {
-          const re = new RegExp(regex.source, regex.flags);
-          let m;
-          while ((m = re.exec(text)) !== null) {
-            matches.push({ start: m.index, end: m.index + m[0].length, reason });
-          }
-        });
-        if (!matches.length) return;
-        matches.sort((a, b) => a.start - b.start);
-
-        const frag = document.createDocumentFragment();
-        let cursor = 0;
-        matches.forEach((match) => {
-          if (match.start < cursor) return;
-          if (match.start > cursor) frag.appendChild(document.createTextNode(text.slice(cursor, match.start)));
-          const span = document.createElement("span");
-          span.className = "legal-revision";
-          span.setAttribute("data-reason", match.reason);
-          span.setAttribute("contenteditable", "false");
-          span.textContent = text.slice(match.start, match.end);
-          frag.appendChild(span);
-          cursor = match.end;
-          count++;
-        });
-        if (cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
-        textNode.parentNode?.replaceChild(frag, textNode);
-      });
-
-      setRevisionCount(count);
-    };
-
-    let timer: NodeJS.Timeout;
-    const debounced = () => {
-      clearTimeout(timer);
-      timer = setTimeout(applyHighlights, 600);
-    };
-
-    editor.on("update", debounced);
-    applyHighlights();
-
     const text = editor.getText();
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
-
-    return () => {
-      clearTimeout(timer);
-      editor.off("update", debounced);
-    };
   }, [editor]);
 
   if (!editor) return null;

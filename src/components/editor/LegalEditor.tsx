@@ -376,6 +376,12 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
               <ToolBtn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Citação"><Quote className="size-3.5" /></ToolBtn>
             </ToolbarGroup>
             <ToolbarGroup last>
+              <ToolBtn onClick={saveManualSnapshot} title="Salvar versão agora">
+                <Save className="size-3.5" />
+              </ToolBtn>
+              <ToolBtn onClick={() => setHistoryOpen(true)} title="Histórico de versões">
+                <History className="size-3.5" />
+              </ToolBtn>
               <ToolBtn
                 active={panelOpen}
                 onClick={() => setPanelOpen((o) => !o)}

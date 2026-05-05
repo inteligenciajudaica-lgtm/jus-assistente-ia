@@ -200,6 +200,33 @@ export type Database = {
           },
         ]
       }
+      document_versions: {
+        Row: {
+          content: string
+          created_at: string
+          document_id: string
+          id: string
+          label: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_id: string
+          id?: string
+          label?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          label?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       generated_documents: {
         Row: {
           case_id: string

@@ -518,6 +518,118 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
           </div>
         </aside>
       )}
+
+      {/* Diálogo de histórico de versões */}
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="size-4 text-accent" />
+              Histórico de versões
+            </DialogTitle>
+            <DialogDescription>
+              Versões salvas automaticamente a cada 30 segundos de inatividade. Clique em "Restaurar" para voltar a uma versão anterior — o estado atual será salvo antes.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto -mx-6 px-6 py-2">
+            {versionsLoading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
+                <Loader2 className="size-4 animate-spin mr-2" /> Carregando...
+              </div>
+            ) : versions.length === 0 ? (
+              <div className="text-center py-12 text-sm text-muted-foreground">
+                Nenhuma versão salva ainda.
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {versions.map((v, i) => {
+                  const date = new Date(v.created_at);
+                  const isLatest = i === 0;
+                  return (
+                    <li
+                      key={v.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-accent/50 hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="size-9 rounded-md bg-muted flex items-center justify-center shrink-0">
+                        <History className="size-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">
+                            {v.label || "Snapshot automático"}
+                          </p>
+                          {isLatest && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-semibold uppercase">
+                              Atual
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                          {date.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "medium" })}
+                          <span className="ml-2">· {v.content.replace(/<[^>]+>/g, "").length} caracteres</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs"
+                          onClick={() => setRestoreCandidate(v)}
+                          disabled={isLatest}
+                        >
+                          <RotateCcw className="size-3" />
+                          Restaurar
+                        </Button>
+                        <button
+                          onClick={() => deleteVersion(v)}
+                          className="size-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center transition-colors"
+                          title="Excluir versão"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <DialogFooter className="border-t border-border pt-3 sm:justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              {versions.length} {versions.length === 1 ? "versão" : "versões"} (máx. 50)
+            </p>
+            <Button onClick={saveManualSnapshot} size="sm" variant="default">
+              <Save className="size-3.5" />
+              Salvar versão agora
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmação de restauração */}
+      <AlertDialog open={!!restoreCandidate} onOpenChange={(o) => !o && setRestoreCandidate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restaurar esta versão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O conteúdo atual do documento será substituído pelo desta versão de{" "}
+              <strong>
+                {restoreCandidate &&
+                  new Date(restoreCandidate.created_at).toLocaleString("pt-BR")}
+              </strong>
+              . Não se preocupe: salvaremos automaticamente uma cópia do estado atual antes de restaurar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => restoreCandidate && restoreVersion(restoreCandidate)}>
+              Restaurar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

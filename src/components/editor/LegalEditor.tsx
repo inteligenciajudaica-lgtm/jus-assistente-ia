@@ -13,12 +13,28 @@ import {
   Heading1, Heading2, Heading3, List, ListOrdered, Quote,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Undo2, Redo2, Check, Loader2, AlertCircle, Sparkles,
-  X, ChevronRight, ChevronLeft, ListChecks,
+  X, ChevronRight, ChevronLeft, ListChecks, History, RotateCcw, Save, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+interface DocumentVersion {
+  id: string;
+  content: string;
+  label: string | null;
+  created_at: string;
+}
 
 interface LegalEditorProps {
   documentId: string;

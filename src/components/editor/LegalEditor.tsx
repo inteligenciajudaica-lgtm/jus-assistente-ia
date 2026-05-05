@@ -141,13 +141,21 @@ const createRevisionExtension = (onChange: (s: Suggestion[]) => void) =>
   });
 
 export function LegalEditor({ documentId, initialContent, title, documentType }: LegalEditorProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [wordCount, setWordCount] = useState(0);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [panelOpen, setPanelOpen] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [restoreCandidate, setRestoreCandidate] = useState<DocumentVersion | null>(null);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const snapshotTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRef = useRef<string>(initialContent);
+  const lastSnapshotRef = useRef<string>(initialContent);
 
   const initialHTML = initialContent.includes("<p>") || initialContent.includes("<h")
     ? initialContent
@@ -173,8 +181,21 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
       const text = editor.getText();
       setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
       scheduleAutosave(editor);
+      scheduleSnapshot(editor);
     },
   });
+
+  const createSnapshot = useCallback(async (html: string, label?: string) => {
+    if (!user) return;
+    if (html === lastSnapshotRef.current) return;
+    const { error } = await supabase.from("document_versions").insert({
+      document_id: documentId,
+      user_id: user.id,
+      content: html,
+      label: label ?? null,
+    });
+    if (!error) lastSnapshotRef.current = html;
+  }, [documentId, user]);
 
   const scheduleAutosave = useCallback((ed: Editor) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -194,15 +215,82 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
     }, 2000);
   }, [documentId]);
 
+  // Snapshot automático após ~30s de inatividade (apenas se houve mudança real)
+  const scheduleSnapshot = useCallback((ed: Editor) => {
+    if (snapshotTimerRef.current) clearTimeout(snapshotTimerRef.current);
+    snapshotTimerRef.current = setTimeout(() => {
+      createSnapshot(ed.getHTML());
+    }, 30000);
+  }, [createSnapshot]);
+
+  const loadVersions = useCallback(async () => {
+    setVersionsLoading(true);
+    const { data, error } = await supabase
+      .from("document_versions")
+      .select("id, content, label, created_at")
+      .eq("document_id", documentId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (!error && data) setVersions(data as DocumentVersion[]);
+    setVersionsLoading(false);
+  }, [documentId]);
+
+  useEffect(() => {
+    if (historyOpen) loadVersions();
+  }, [historyOpen, loadVersions]);
+
+  const saveManualSnapshot = useCallback(async () => {
+    if (!editor) return;
+    const html = editor.getHTML();
+    const label = `Versão manual — ${new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}`;
+    lastSnapshotRef.current = "__force__";
+    await createSnapshot(html, label);
+    toast({ title: "Versão salva", description: label });
+    if (historyOpen) loadVersions();
+  }, [editor, createSnapshot, toast, historyOpen, loadVersions]);
+
+  const restoreVersion = useCallback(async (v: DocumentVersion) => {
+    if (!editor) return;
+    const current = editor.getHTML();
+    lastSnapshotRef.current = "__force__";
+    await createSnapshot(current, `Antes de restaurar — ${new Date().toLocaleString("pt-BR")}`);
+    editor.commands.setContent(v.content, { emitUpdate: true });
+    setHistoryOpen(false);
+    setRestoreCandidate(null);
+    toast({ title: "Versão restaurada", description: new Date(v.created_at).toLocaleString("pt-BR") });
+  }, [editor, createSnapshot, toast]);
+
+  const deleteVersion = useCallback(async (v: DocumentVersion) => {
+    const { error } = await supabase.from("document_versions").delete().eq("id", v.id);
+    if (!error) {
+      setVersions((prev) => prev.filter((x) => x.id !== v.id));
+      toast({ title: "Versão removida" });
+    }
+  }, [toast]);
+
   useEffect(() => {
     if (!editor) return;
     const text = editor.getText();
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
   }, [editor]);
 
+  // Snapshot inicial se for o primeiro acesso ao documento
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { count } = await supabase
+        .from("document_versions")
+        .select("id", { count: "exact", head: true })
+        .eq("document_id", documentId);
+      if ((count ?? 0) === 0 && initialContent) {
+        await createSnapshot(initialHTML, "Versão inicial");
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, documentId]);
+
   const acceptSuggestion = useCallback((s: Suggestion) => {
     if (!editor || !s.replacement) return;
-    // Preserva caixa: se original começa em maiúscula, capitaliza substituição
     const replacement = /^[A-ZÁÂÃÀÉÊÍÓÔÕÚÇ]/.test(s.text)
       ? s.replacement.charAt(0).toUpperCase() + s.replacement.slice(1)
       : s.replacement;

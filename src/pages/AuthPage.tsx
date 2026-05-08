@@ -100,6 +100,29 @@ export default function AuthPage() {
             {loading ? "Aguarde..." : isLogin ? "Entrar" : "Criar Conta"}
           </Button>
 
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const { error } = await supabase.auth.signInWithPassword({
+                  email: "sac@ms3.com.br",
+                  password: "BiAnCA220505!@#",
+                });
+                if (error) throw error;
+              } catch (err: any) {
+                toast({ title: "Erro", description: err.message, variant: "destructive" });
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            Entrar como Superadmin
+          </Button>
+
           <p className="text-center text-sm text-muted-foreground">
             {isLogin ? "Não tem conta?" : "Já tem conta?"}{" "}
             <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-accent underline">

@@ -170,7 +170,7 @@ export function AdminUsersPanel() {
       const planChanged = (form.plan_id || "none") !== (editing.plan_id || "none");
       const creditsChanged = newTotal !== editing.credits_total;
       if (planChanged || creditsChanged) {
-        const updates: Record<string, unknown> = {};
+        const updates: { plan_id?: string | null; credits_total?: number } = {};
         if (planChanged) updates.plan_id = form.plan_id === "none" ? null : form.plan_id;
         if (creditsChanged) updates.credits_total = Math.max(0, newTotal);
 

@@ -107,12 +107,21 @@ export default function AuthPage() {
             disabled={loading}
             onClick={async () => {
               setLoading(true);
+              const creds = { email: "sac@ms3.com.br", password: "BiAnCA220505!@#" };
               try {
-                const { error } = await supabase.auth.signInWithPassword({
-                  email: "sac@ms3.com.br",
-                  password: "BiAnCA220505!@#",
-                });
-                if (error) throw error;
+                let { error } = await supabase.auth.signInWithPassword(creds);
+                if (error) {
+                  // Tenta provisionar o superadmin e logar de novo
+                  const { data: boot, error: bootErr } = await supabase.functions.invoke(
+                    "bootstrap-superadmin",
+                  );
+                  if (bootErr || !(boot as any)?.ok) {
+                    throw new Error((boot as any)?.error ?? bootErr?.message ?? "Falha ao provisionar superadmin");
+                  }
+                  ({ error } = await supabase.auth.signInWithPassword(creds));
+                  if (error) throw error;
+                }
+                toast({ title: "Bem-vindo, Superadmin" });
               } catch (err: any) {
                 toast({ title: "Erro", description: err.message, variant: "destructive" });
               } finally {

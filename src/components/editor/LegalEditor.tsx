@@ -350,6 +350,9 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
               <ToolBtn onClick={() => setHistoryOpen(true)} title="Histórico de versões">
                 <History className="size-3.5" />
               </ToolBtn>
+              <ToolBtn onClick={() => setExportOpen(true)} title="Exportar para .docx">
+                <Download className="size-3.5" />
+              </ToolBtn>
               <ToolBtn
                 active={panelOpen}
                 onClick={() => setPanelOpen((o) => !o)}

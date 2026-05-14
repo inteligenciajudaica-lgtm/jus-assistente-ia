@@ -17,7 +17,7 @@ interface RunStyle {
   italics?: boolean;
   underline?: boolean;
   strike?: boolean;
-  highlight?: string;
+  highlight?: "yellow" | "green" | "cyan" | "magenta" | "red" | "blue";
 }
 
 function alignmentFromStyle(style?: string | null): (typeof AlignmentType)[keyof typeof AlignmentType] | undefined {

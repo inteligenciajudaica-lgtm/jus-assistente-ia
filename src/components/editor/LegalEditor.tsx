@@ -42,6 +42,7 @@ interface LegalEditorProps {
   initialContent: string;
   title: string;
   documentType: string;
+  areaOfLaw?: string | null;
 }
 
 const revisionPluginKey = new PluginKey<RevisionState>("legal-revision");
@@ -88,7 +89,7 @@ const createRevisionExtension = (onChange: (s: Suggestion[]) => void) =>
     },
   });
 
-export function LegalEditor({ documentId, initialContent, title, documentType }: LegalEditorProps) {
+export function LegalEditor({ documentId, initialContent, title, documentType, areaOfLaw }: LegalEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -150,18 +151,28 @@ export function LegalEditor({ documentId, initialContent, title, documentType }:
     setSaveStatus("saving");
     saveTimerRef.current = setTimeout(async () => {
       const html = ed.getHTML();
+      const text = ed.getText();
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      // ler contagem atual de revisões direto do plugin (mais confiável que state assíncrono)
+      const pluginState = revisionPluginKey.getState(ed.state);
+      const revisions = pluginState?.suggestions.length ?? 0;
       if (html === lastSavedRef.current) {
         setSaveStatus("saved");
         return;
       }
       const { error } = await supabase
         .from("generated_documents")
-        .update({ content: html })
+        .update({
+          content: html,
+          word_count: words,
+          revision_count: revisions,
+          area_of_law: areaOfLaw ?? null,
+        })
         .eq("id", documentId);
       if (error) setSaveStatus("error");
       else { lastSavedRef.current = html; setSaveStatus("saved"); }
     }, 2000);
-  }, [documentId]);
+  }, [documentId, areaOfLaw]);
 
   // Snapshot automático após ~30s de inatividade (apenas se houve mudança real)
   const scheduleSnapshot = useCallback((ed: Editor) => {

@@ -14,10 +14,13 @@ import {
   Heading1, Heading2, Heading3, List, ListOrdered, Quote,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Undo2, Redo2, Check, Loader2, AlertCircle, Sparkles,
-  X, ChevronRight, ChevronLeft, ListChecks, History, RotateCcw, Save, Trash2,
+  X, ChevronRight, ChevronLeft, ListChecks, History, RotateCcw, Save, Trash2, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -27,6 +30,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { exportDocxFromHtml } from "@/lib/docxExport";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 

@@ -105,6 +105,11 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [restoreCandidate, setRestoreCandidate] = useState<DocumentVersion | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [headerText, setHeaderText] = useState<string>("");
+  const [footerText, setFooterText] = useState<string>("");
+  const [includePageNumber, setIncludePageNumber] = useState(true);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const snapshotTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRef = useRef<string>(initialContent);

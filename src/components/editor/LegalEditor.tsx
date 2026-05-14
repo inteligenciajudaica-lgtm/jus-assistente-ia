@@ -14,10 +14,13 @@ import {
   Heading1, Heading2, Heading3, List, ListOrdered, Quote,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Undo2, Redo2, Check, Loader2, AlertCircle, Sparkles,
-  X, ChevronRight, ChevronLeft, ListChecks, History, RotateCcw, Save, Trash2,
+  X, ChevronRight, ChevronLeft, ListChecks, History, RotateCcw, Save, Trash2, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -27,6 +30,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { exportDocxFromHtml } from "@/lib/docxExport";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -101,6 +105,11 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [restoreCandidate, setRestoreCandidate] = useState<DocumentVersion | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [headerText, setHeaderText] = useState<string>("");
+  const [footerText, setFooterText] = useState<string>("");
+  const [includePageNumber, setIncludePageNumber] = useState(true);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const snapshotTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRef = useRef<string>(initialContent);
@@ -227,6 +236,26 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
     }
   }, [toast]);
 
+  const handleExportDocx = useCallback(async () => {
+    if (!editor) return;
+    try {
+      setExporting(true);
+      await exportDocxFromHtml({
+        title,
+        html: editor.getHTML(),
+        headerText,
+        footerText,
+        includePageNumber,
+      });
+      toast({ title: "Exportado", description: "Arquivo .docx gerado com sucesso." });
+      setExportOpen(false);
+    } catch (e: any) {
+      toast({ title: "Erro ao exportar", description: e?.message ?? "Falha desconhecida", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }, [editor, title, headerText, footerText, includePageNumber, toast]);
+
   useEffect(() => {
     if (!editor) return;
     const text = editor.getText();
@@ -340,6 +369,9 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
               </ToolBtn>
               <ToolBtn onClick={() => setHistoryOpen(true)} title="Histórico de versões">
                 <History className="size-3.5" />
+              </ToolBtn>
+              <ToolBtn onClick={() => setExportOpen(true)} title="Exportar para .docx">
+                <Download className="size-3.5" />
               </ToolBtn>
               <ToolBtn
                 active={panelOpen}
@@ -589,6 +621,54 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Exportação para .docx */}
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Exportar para .docx</DialogTitle>
+            <DialogDescription>
+              Gera um arquivo Word em formato A4 mantendo a formatação. Configure o cabeçalho e o rodapé que aparecerão em todas as páginas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="header-text" className="text-xs">Cabeçalho</Label>
+              <Input
+                id="header-text"
+                value={headerText}
+                onChange={(e) => setHeaderText(e.target.value)}
+                placeholder="Ex.: Escritório Silva & Associados"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="footer-text" className="text-xs">Rodapé</Label>
+              <Input
+                id="footer-text"
+                value={footerText}
+                onChange={(e) => setFooterText(e.target.value)}
+                placeholder="Ex.: Rua X, 123 — São Paulo/SP — (11) 0000-0000"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+              <div>
+                <Label htmlFor="page-number" className="text-xs">Numerar páginas</Label>
+                <p className="text-[11px] text-muted-foreground">Inclui "Página X de Y" no rodapé.</p>
+              </div>
+              <Switch id="page-number" checked={includePageNumber} onCheckedChange={setIncludePageNumber} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExportOpen(false)} disabled={exporting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleExportDocx} disabled={exporting}>
+              {exporting ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Download className="size-4 mr-2" />}
+              Exportar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

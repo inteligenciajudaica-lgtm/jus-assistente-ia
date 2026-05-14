@@ -6,8 +6,9 @@ import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
 import Highlight from "@tiptap/extension-highlight";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
-import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { DecorationSet } from "@tiptap/pm/view";
 import { supabase } from "@/integrations/supabase/client";
+import { buildSuggestions, dismissKey, type Suggestion } from "./revisionEngine";
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   Heading1, Heading2, Heading3, List, ListOrdered, Quote,

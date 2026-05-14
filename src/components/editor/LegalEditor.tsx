@@ -42,6 +42,7 @@ interface LegalEditorProps {
   initialContent: string;
   title: string;
   documentType: string;
+  areaOfLaw?: string | null;
 }
 
 const revisionPluginKey = new PluginKey<RevisionState>("legal-revision");

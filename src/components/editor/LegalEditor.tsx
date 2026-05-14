@@ -256,6 +256,12 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
     }
   }, [editor, title, headerText, footerText, includePageNumber, toast]);
 
+  useEffect(() => {
+    if (!editor) return;
+    const text = editor.getText();
+    setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
+  }, [editor]);
+
   // Snapshot inicial se for o primeiro acesso ao documento
   useEffect(() => {
     if (!user) return;

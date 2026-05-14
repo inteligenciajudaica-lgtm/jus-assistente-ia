@@ -229,34 +229,46 @@ export type Database = {
       }
       generated_documents: {
         Row: {
+          area_of_law: string | null
           case_id: string
           content: string
           conversation_id: string | null
           created_at: string
           document_type: string
           id: string
+          revision_count: number
           title: string
+          updated_at: string
           user_id: string
+          word_count: number
         }
         Insert: {
+          area_of_law?: string | null
           case_id: string
           content: string
           conversation_id?: string | null
           created_at?: string
           document_type: string
           id?: string
+          revision_count?: number
           title: string
+          updated_at?: string
           user_id: string
+          word_count?: number
         }
         Update: {
+          area_of_law?: string | null
           case_id?: string
           content?: string
           conversation_id?: string | null
           created_at?: string
           document_type?: string
           id?: string
+          revision_count?: number
           title?: string
+          updated_at?: string
           user_id?: string
+          word_count?: number
         }
         Relationships: []
       }

@@ -1,13 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { Schema, DOMParser } from "@tiptap/pm/model";
-import { schema as basicSchema } from "prosemirror-schema-basic";
 import { JSDOM } from "jsdom";
 import { buildSuggestions, dismissKey, REVISION_PATTERNS } from "./revisionEngine";
 
-// Reuse a minimal schema with paragraph + text from prosemirror-schema-basic
 const schema = new Schema({
-  nodes: basicSchema.spec.nodes,
-  marks: basicSchema.spec.marks,
+  nodes: {
+    doc: { content: "block+" },
+    paragraph: {
+      group: "block",
+      content: "text*",
+      parseDOM: [{ tag: "p" }],
+      toDOM: () => ["p", 0],
+    },
+    text: { group: "inline" },
+  },
 });
 
 function makeDoc(html: string) {

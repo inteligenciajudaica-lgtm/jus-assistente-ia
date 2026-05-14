@@ -621,6 +621,54 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Exportação para .docx */}
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Exportar para .docx</DialogTitle>
+            <DialogDescription>
+              Gera um arquivo Word em formato A4 mantendo a formatação. Configure o cabeçalho e o rodapé que aparecerão em todas as páginas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="header-text" className="text-xs">Cabeçalho</Label>
+              <Input
+                id="header-text"
+                value={headerText}
+                onChange={(e) => setHeaderText(e.target.value)}
+                placeholder="Ex.: Escritório Silva & Associados"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="footer-text" className="text-xs">Rodapé</Label>
+              <Input
+                id="footer-text"
+                value={footerText}
+                onChange={(e) => setFooterText(e.target.value)}
+                placeholder="Ex.: Rua X, 123 — São Paulo/SP — (11) 0000-0000"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+              <div>
+                <Label htmlFor="page-number" className="text-xs">Numerar páginas</Label>
+                <p className="text-[11px] text-muted-foreground">Inclui "Página X de Y" no rodapé.</p>
+              </div>
+              <Switch id="page-number" checked={includePageNumber} onCheckedChange={setIncludePageNumber} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExportOpen(false)} disabled={exporting}>
+              Cancelar
+            </Button>
+            <Button onClick={handleExportDocx} disabled={exporting}>
+              {exporting ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Download className="size-4 mr-2" />}
+              Exportar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

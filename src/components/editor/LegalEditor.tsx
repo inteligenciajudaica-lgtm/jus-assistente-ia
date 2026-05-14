@@ -89,7 +89,7 @@ const createRevisionExtension = (onChange: (s: Suggestion[]) => void) =>
     },
   });
 
-export function LegalEditor({ documentId, initialContent, title, documentType }: LegalEditorProps) {
+export function LegalEditor({ documentId, initialContent, title, documentType, areaOfLaw }: LegalEditorProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");

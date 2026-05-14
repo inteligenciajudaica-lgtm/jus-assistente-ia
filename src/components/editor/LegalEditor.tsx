@@ -236,11 +236,25 @@ export function LegalEditor({ documentId, initialContent, title, documentType, a
     }
   }, [toast]);
 
-  useEffect(() => {
+  const handleExportDocx = useCallback(async () => {
     if (!editor) return;
-    const text = editor.getText();
-    setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
-  }, [editor]);
+    try {
+      setExporting(true);
+      await exportDocxFromHtml({
+        title,
+        html: editor.getHTML(),
+        headerText,
+        footerText,
+        includePageNumber,
+      });
+      toast({ title: "Exportado", description: "Arquivo .docx gerado com sucesso." });
+      setExportOpen(false);
+    } catch (e: any) {
+      toast({ title: "Erro ao exportar", description: e?.message ?? "Falha desconhecida", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  }, [editor, title, headerText, footerText, includePageNumber, toast]);
 
   // Snapshot inicial se for o primeiro acesso ao documento
   useEffect(() => {

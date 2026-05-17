@@ -96,17 +96,28 @@ export function AdminProcessTracking() {
   const [looking, setLooking] = useState(false);
   const [lookupResult, setLookupResult] = useState<any>(null);
 
+  const [lastCronRun, setLastCronRun] = useState<any>(null);
+
+  const loadLastCronRun = async () => {
+    const { data } = await supabase
+      .from("app_settings").select("value")
+      .eq("key", "process_tracking_cron_last_run").maybeSingle();
+    setLastCronRun(data?.value ?? null);
+  };
+
   useEffect(() => {
     (async () => {
-      const [cfgRes, listRes] = await Promise.all([
+      const [cfgRes, listRes, runRes] = await Promise.all([
         supabase.from("app_settings").select("value").eq("key", "process_tracking_config").maybeSingle(),
         supabase.from("tracked_processes").select("*").order("updated_at", { ascending: false }),
+        supabase.from("app_settings").select("value").eq("key", "process_tracking_cron_last_run").maybeSingle(),
       ]);
       if (cfgRes.data?.value) {
         const v = cfgRes.data.value as any;
         setConfig((c) => ({ ...c, ...v }));
       }
       if (listRes.data) setTracked(listRes.data as any);
+      if (runRes.data?.value) setLastCronRun(runRes.data.value);
       setLoading(false);
     })();
   }, []);

@@ -81,8 +81,6 @@ Deno.serve(async (req) => {
 
   const startedAt = Date.now();
   try {
-    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, serviceRoleKey);
-
     // 1) Configuração
     const { data: cfgRow } = await supabase
       .from("app_settings")

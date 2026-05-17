@@ -57,8 +57,23 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, serviceRoleKey);
+
+  // Autorização: aceita Service Role (chamadas internas) ou header x-cron-token
+  // que confere com o token salvo em app_settings.process_tracking_cron_token
   const auth = req.headers.get("Authorization") ?? "";
-  if (auth !== `Bearer ${serviceRoleKey}`) {
+  const cronToken = req.headers.get("x-cron-token") ?? "";
+  let authorized = auth === `Bearer ${serviceRoleKey}`;
+  if (!authorized && cronToken) {
+    const { data: tokRow } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "process_tracking_cron_token")
+      .maybeSingle();
+    const expected = (tokRow?.value as any)?.token;
+    authorized = !!expected && expected === cronToken;
+  }
+  if (!authorized) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

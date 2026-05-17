@@ -1,9 +1,10 @@
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NewCaseDialog } from "@/components/NewCaseDialog";
 import { GenerateDocumentDialog } from "@/components/GenerateDocumentDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNavTrigger } from "@/components/AppSidebar";
+import { SystemNoticesPopover } from "@/components/SystemNoticesPopover";
 
 interface DashboardHeaderProps {
   onCaseCreated?: () => void;
@@ -26,10 +27,8 @@ export function DashboardHeader({ onCaseCreated }: DashboardHeaderProps) {
       </div>
       <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
         <div className="hidden sm:inline-flex"><ThemeToggle /></div>
-        <Button variant="ghost" size="icon" className="relative rounded-md hover:bg-muted hidden sm:inline-flex">
-          <Bell className="size-4" />
-          <span className="absolute top-2 right-2 size-1.5 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]" />
-        </Button>
+        <div className="hidden sm:inline-flex"><SystemNoticesPopover /></div>
+        <div className="sm:hidden"><SystemNoticesPopover /></div>
         <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
         <GenerateDocumentDialog />
         <NewCaseDialog onCreated={onCaseCreated} />

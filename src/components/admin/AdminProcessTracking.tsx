@@ -351,6 +351,38 @@ export function AdminProcessTracking() {
           {saving && <Loader2 className="size-4 animate-spin mr-2" />}
           Salvar configurações
         </Button>
+
+        {/* Status da sincronização automática */}
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-xs font-medium">Sincronização automática (cron)</Label>
+            <Button variant="ghost" size="sm" onClick={loadLastCronRun}>
+              <RefreshCw className="size-3 mr-1" /> Recarregar
+            </Button>
+          </div>
+          <div className="text-[11px] text-muted-foreground space-y-1">
+            <div>
+              Agendado a cada hora. A função processa apenas processos com mais de{" "}
+              <strong>{config.autoSyncHours}h</strong> sem atualização
+              {config.enabled ? "" : " (atualmente desativado)"}.
+            </div>
+            {lastCronRun ? (
+              <div className="bg-muted/50 rounded-sm p-2 mt-1 space-y-0.5">
+                <div>Última execução: <strong>{formatDate(lastCronRun.ranAt)}</strong></div>
+                <div>
+                  Considerados: {lastCronRun.considered ?? 0} ·
+                  <span className="text-emerald-600 dark:text-emerald-400"> {lastCronRun.synced ?? 0} sincronizados</span>
+                  {(lastCronRun.failed ?? 0) > 0 && (
+                    <span className="text-destructive"> · {lastCronRun.failed} falhas</span>
+                  )}
+                  {typeof lastCronRun.durationMs === "number" && ` · ${lastCronRun.durationMs}ms`}
+                </div>
+              </div>
+            ) : (
+              <div className="italic">Nenhuma execução registrada ainda.</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* LOOKUP + ADICIONAR */}

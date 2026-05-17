@@ -90,6 +90,7 @@ export default function AdminPage() {
               <AdminAISettings />
               <AdminApiKeys />
               <AdminJurisprudenceSettings />
+              <AdminProcessTracking />
             </div>
           )}
         </div>

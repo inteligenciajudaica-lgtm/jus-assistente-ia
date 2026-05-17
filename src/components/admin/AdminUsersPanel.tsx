@@ -212,8 +212,8 @@ export function AdminUsersPanel() {
         <h2 className="text-lg font-medium">Usuários ({users.length})</h2>
       </div>
 
-      <div className="bg-card border border-border rounded-sm overflow-hidden">
-        <table className="w-full text-left text-sm">
+      <div className="bg-card border border-border rounded-sm overflow-x-auto">
+        <table className="w-full text-left text-sm min-w-[760px]">
           <thead className="bg-muted text-muted-foreground font-medium">
             <tr>
               <th className="px-4 py-3 font-medium">Usuário</th>

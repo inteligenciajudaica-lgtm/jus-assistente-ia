@@ -29,7 +29,7 @@ export default function ProcessosPage() {
           {selectedCaseId ? (
             <CaseWorkspace caseId={selectedCaseId} caseName={selectedCaseName} onBack={() => setSelectedCaseId(null)} />
           ) : (
-            <section className="flex-1 overflow-y-auto p-8 space-y-6">
+            <section className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
               <h1 className="text-xl font-medium">Processos Ativos</h1>
               <CasesTable key={`cases-${refreshKey}`} onSelectCase={setSelectedCaseId} selectedCaseId={selectedCaseId} />
             </section>

@@ -79,7 +79,7 @@ export default function DocumentosPage() {
       <AppSidebar />
       <main className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
-        <section className="flex-1 overflow-y-auto p-8 space-y-6">
+        <section className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-medium">Biblioteca de Documentos</h1>
             <div className="flex items-center gap-2">

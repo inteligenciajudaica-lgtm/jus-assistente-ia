@@ -9,10 +9,10 @@ export default function PrazosPage() {
       <AppSidebar />
       <main className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
-        <section className="flex-1 overflow-y-auto p-8 space-y-6">
+        <section className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
           <h1 className="text-xl font-medium">Agenda de Prazos</h1>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-card border border-border rounded-sm p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Próximos 7 dias</p>

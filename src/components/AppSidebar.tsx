@@ -1,4 +1,4 @@
-import { LogOut, Shield, Zap, User } from "lucide-react";
+import { LogOut, Shield, Zap, Menu } from "lucide-react";
 import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,6 +6,8 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link, useLocation } from "react-router-dom";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 interface NavItem {
   icon: React.ElementType;
@@ -22,10 +24,9 @@ const navItems: NavItem[] = [
   { icon: MessageSquare, label: "Conversas", path: "/conversas", section: "Gestão Central" },
 ];
 
-export function AppSidebar() {
+function useSidebarData() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const location = useLocation();
   const [profile, setProfile] = useState<{ full_name: string | null; oab_number: string | null; oab_state: string | null } | null>(null);
   const [credits, setCredits] = useState<{ credits_total: number; credits_used: number } | null>(null);
 
@@ -40,6 +41,12 @@ export function AppSidebar() {
     });
   }, [user]);
 
+  return { user, signOut, isAdmin, profile, credits };
+}
+
+function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
+  const { user, signOut, isAdmin, profile, credits } = useSidebarData();
+  const location = useLocation();
   let lastSection = "";
 
   const initials = profile?.full_name
@@ -47,7 +54,7 @@ export function AppSidebar() {
     : "?";
 
   return (
-    <aside className="w-64 border-r border-border flex flex-col shrink-0 bg-sidebar relative overflow-hidden">
+    <div className="flex flex-col h-full relative overflow-hidden bg-sidebar">
       {/* Aurora background accent */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-aurora opacity-60" />
 
@@ -107,6 +114,7 @@ export function AppSidebar() {
               )}
               <Link
                 to={item.path}
+                onClick={onNavigate}
                 className={cn(
                   "group flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm surface-interactive relative",
                   isActive
@@ -129,6 +137,7 @@ export function AppSidebar() {
         <div className="relative px-3 pb-2">
           <Link
             to="/admin"
+            onClick={onNavigate}
             className={cn(
               "group flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm surface-interactive relative",
               location.pathname === "/admin"
@@ -147,11 +156,11 @@ export function AppSidebar() {
 
       <div className="relative p-3 border-t border-border">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 surface-interactive">
-          <Link to="/perfil" className="size-9 rounded-full bg-gradient-primary border border-border flex items-center justify-center text-xs font-semibold text-white hover:ring-2 hover:ring-accent/40 surface-interactive shadow-sm-soft">
+          <Link to="/perfil" onClick={onNavigate} className="size-9 rounded-full bg-gradient-primary border border-border flex items-center justify-center text-xs font-semibold text-white hover:ring-2 hover:ring-accent/40 surface-interactive shadow-sm-soft">
             {initials}
           </Link>
           <div className="min-w-0 flex-1">
-            <Link to="/perfil" className="text-sm font-medium truncate block hover:text-accent transition-colors">
+            <Link to="/perfil" onClick={onNavigate} className="text-sm font-medium truncate block hover:text-accent transition-colors">
               {profile?.full_name || user?.email}
             </Link>
             {profile?.oab_number && (
@@ -165,6 +174,35 @@ export function AppSidebar() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+export function AppSidebar() {
+  return (
+    <aside className="hidden md:flex w-64 border-r border-border flex-col shrink-0">
+      <SidebarInner />
     </aside>
+  );
+}
+
+export function MobileNavTrigger({ className }: { className?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("md:hidden -ml-1", className)}
+          aria-label="Abrir menu"
+        >
+          <Menu className="size-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="p-0 w-72 max-w-[85vw] border-r border-border">
+        <SidebarInner onNavigate={() => setOpen(false)} />
+      </SheetContent>
+    </Sheet>
   );
 }

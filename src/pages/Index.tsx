@@ -36,9 +36,9 @@ const Index = () => {
               onBack={() => setSelectedCaseId(null)}
             />
           ) : (
-            <section className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-8 animate-fade-in">
+            <section className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 animate-fade-in">
               {/* Hero */}
-              <div className="relative rounded-2xl border border-border bg-gradient-card overflow-hidden p-8 lg:p-10">
+              <div className="relative rounded-2xl border border-border bg-gradient-card overflow-hidden p-5 sm:p-8 lg:p-10">
                 <div className="absolute inset-0 bg-grid opacity-50 pointer-events-none" />
                 <div className="absolute -top-24 -right-24 size-72 rounded-full bg-gradient-primary opacity-20 blur-3xl pointer-events-none" />
                 <div className="relative flex items-end justify-between gap-6 flex-wrap">
@@ -47,10 +47,10 @@ const Index = () => {
                       <span className="size-1.5 rounded-full bg-accent animate-glow-pulse" />
                       Visão geral em tempo real
                     </div>
-                    <h1 className="text-4xl lg:text-5xl font-semibold tracking-tight text-balance">
+                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-balance">
                       Painel de <span className="font-display italic text-gradient-primary">Monitoramento</span>
                     </h1>
-                    <p className="text-muted-foreground mt-3 text-pretty max-w-xl">
+                    <p className="text-muted-foreground mt-3 text-sm sm:text-base text-pretty max-w-xl">
                       Acompanhe seus processos, prazos e produção documental em um só lugar — com o copiloto JURIS AI ao seu lado.
                     </p>
                   </div>

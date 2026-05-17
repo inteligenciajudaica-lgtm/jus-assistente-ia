@@ -58,7 +58,7 @@ export default function PerfilPage() {
       <AppSidebar />
       <main className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
-        <section className="flex-1 overflow-y-auto p-8 space-y-6">
+        <section className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
           <h1 className="text-xl font-medium">Perfil do Advogado</h1>
 
           {loading ? (

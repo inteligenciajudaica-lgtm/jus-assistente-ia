@@ -144,7 +144,7 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
         </div>
 
         {/* Tab bar */}
-        <div className="flex px-4 gap-1">
+        <div className="flex px-2 sm:px-4 gap-1 overflow-x-auto scrollbar-thin">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -152,7 +152,7 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${
                   isActive
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
@@ -187,10 +187,10 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
         )}
 
         {activeTab === "dados" && (
-          <div className="overflow-y-auto h-full p-6">
+          <div className="overflow-y-auto h-full p-4 sm:p-6">
             <div className="max-w-2xl mx-auto space-y-6">
               <h3 className="text-base font-semibold">Dados do Processo</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
                   { icon: Hash, label: "Número", value: caseData.case_number },
                   { icon: Scale, label: "Tribunal", value: caseData.court },
@@ -201,18 +201,18 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
                 ].map((item, i) => {
                   const Icon = item.icon;
                   return (
-                    <div key={i} className="flex items-start gap-3 p-4 border border-border rounded-sm bg-card">
+                    <div key={i} className="flex items-start gap-3 p-3 sm:p-4 border border-border rounded-sm bg-card">
                       <Icon className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
-                        <p className="text-sm font-medium mt-0.5">{item.value || <span className="text-muted-foreground italic">Não informado</span>}</p>
+                        <p className="text-sm font-medium mt-0.5 break-words">{item.value || <span className="text-muted-foreground italic">Não informado</span>}</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
               {caseData.description && (
-                <div className="p-4 border border-border rounded-sm bg-card">
+                <div className="p-3 sm:p-4 border border-border rounded-sm bg-card">
                   <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Descrição</p>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{caseData.description}</p>
                 </div>
@@ -222,9 +222,9 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
         )}
 
         {activeTab === "documentos" && (
-          <div className="overflow-y-auto h-full p-6">
+          <div className="overflow-y-auto h-full p-4 sm:p-6">
             <div className="max-w-2xl mx-auto space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="text-base font-semibold">Documentos ({docs.length})</h3>
                 <DocumentUploadDialog
                   onUploaded={() => setRefreshKey((k) => k + 1)}
@@ -238,41 +238,43 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
                   <p className="text-xs mt-1">Use o botão acima para enviar documentos.</p>
                 </div>
               ) : (
-                <div className="border border-border rounded-sm overflow-hidden">
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_120px_120px_100px] gap-2 px-4 py-2.5 bg-muted/60 border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                    <span>Nome</span>
-                    <span>Tipo</span>
-                    <span>Enviado em</span>
-                    <span className="text-center">Análise IA</span>
-                  </div>
-                  {docs.map((doc) => (
-                    <div
-                      key={doc.id}
-                      onClick={() => handleDownload(doc)}
-                      className="grid grid-cols-[1fr_120px_120px_100px] gap-2 items-center px-4 py-3 border-b last:border-b-0 border-border bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {docIcon(doc.file_type)}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{doc.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{formatSize(doc.file_size)}</p>
+                <div className="border border-border rounded-sm overflow-x-auto">
+                  <div className="min-w-[640px]">
+                    {/* Table header */}
+                    <div className="grid grid-cols-[1fr_120px_120px_100px] gap-2 px-4 py-2.5 bg-muted/60 border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                      <span>Nome</span>
+                      <span>Tipo</span>
+                      <span>Enviado em</span>
+                      <span className="text-center">Análise IA</span>
+                    </div>
+                    {docs.map((doc) => (
+                      <div
+                        key={doc.id}
+                        onClick={() => handleDownload(doc)}
+                        className="grid grid-cols-[1fr_120px_120px_100px] gap-2 items-center px-4 py-3 border-b last:border-b-0 border-border bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {docIcon(doc.file_type)}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{doc.name}</p>
+                            <p className="text-[11px] text-muted-foreground">{formatSize(doc.file_size)}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {doc.file_type?.includes("pdf") ? "PDF" :
+                           doc.file_type?.includes("word") || doc.file_type?.includes("doc") ? "DOC" :
+                           doc.file_type?.startsWith("image/") ? "Imagem" : doc.file_type || "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</span>
+                        <div className="flex justify-center">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                            <span className="size-1.5 rounded-full bg-warning" />
+                            Pendente
+                          </Badge>
                         </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {doc.file_type?.includes("pdf") ? "PDF" :
-                         doc.file_type?.includes("word") || doc.file_type?.includes("doc") ? "DOC" :
-                         doc.file_type?.startsWith("image/") ? "Imagem" : doc.file_type || "—"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</span>
-                      <div className="flex justify-center">
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
-                          <span className="size-1.5 rounded-full bg-warning" />
-                          Pendente
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

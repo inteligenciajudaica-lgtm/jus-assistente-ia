@@ -347,6 +347,72 @@ export type Database = {
         }
         Relationships: []
       }
+      tracked_processes: {
+        Row: {
+          assuntos: Json | null
+          case_id: string | null
+          classe: string | null
+          created_at: string
+          data_ajuizamento: string | null
+          grau: string | null
+          id: string
+          last_synced_at: string | null
+          movimentos_count: number
+          nickname: string | null
+          notes: string | null
+          numero_processo: string
+          orgao_julgador: string | null
+          raw_data: Json | null
+          tribunal: string
+          ultimo_movimento: string | null
+          ultimo_movimento_data: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assuntos?: Json | null
+          case_id?: string | null
+          classe?: string | null
+          created_at?: string
+          data_ajuizamento?: string | null
+          grau?: string | null
+          id?: string
+          last_synced_at?: string | null
+          movimentos_count?: number
+          nickname?: string | null
+          notes?: string | null
+          numero_processo: string
+          orgao_julgador?: string | null
+          raw_data?: Json | null
+          tribunal: string
+          ultimo_movimento?: string | null
+          ultimo_movimento_data?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assuntos?: Json | null
+          case_id?: string | null
+          classe?: string | null
+          created_at?: string
+          data_ajuizamento?: string | null
+          grau?: string | null
+          id?: string
+          last_synced_at?: string | null
+          movimentos_count?: number
+          nickname?: string | null
+          notes?: string | null
+          numero_processo?: string
+          orgao_julgador?: string | null
+          raw_data?: Json | null
+          tribunal?: string
+          ultimo_movimento?: string | null
+          ultimo_movimento_data?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_credits: {
         Row: {
           created_at: string

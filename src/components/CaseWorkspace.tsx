@@ -187,10 +187,10 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
         )}
 
         {activeTab === "dados" && (
-          <div className="overflow-y-auto h-full p-6">
+          <div className="overflow-y-auto h-full p-4 sm:p-6">
             <div className="max-w-2xl mx-auto space-y-6">
               <h3 className="text-base font-semibold">Dados do Processo</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
                   { icon: Hash, label: "Número", value: caseData.case_number },
                   { icon: Scale, label: "Tribunal", value: caseData.court },
@@ -201,18 +201,18 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
                 ].map((item, i) => {
                   const Icon = item.icon;
                   return (
-                    <div key={i} className="flex items-start gap-3 p-4 border border-border rounded-sm bg-card">
+                    <div key={i} className="flex items-start gap-3 p-3 sm:p-4 border border-border rounded-sm bg-card">
                       <Icon className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
-                        <p className="text-sm font-medium mt-0.5">{item.value || <span className="text-muted-foreground italic">Não informado</span>}</p>
+                        <p className="text-sm font-medium mt-0.5 break-words">{item.value || <span className="text-muted-foreground italic">Não informado</span>}</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
               {caseData.description && (
-                <div className="p-4 border border-border rounded-sm bg-card">
+                <div className="p-3 sm:p-4 border border-border rounded-sm bg-card">
                   <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Descrição</p>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{caseData.description}</p>
                 </div>

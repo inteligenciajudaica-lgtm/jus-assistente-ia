@@ -86,7 +86,10 @@ export function AdminProcessTracking() {
   const [newNickname, setNewNickname] = useState("");
   const [newNotes, setNewNotes] = useState("");
   const [adding, setAdding] = useState(false);
-  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({});
+  const [bulkSync, setBulkSync] = useState<{ active: boolean; done: number; total: number; failed: number }>({
+    active: false, done: 0, total: 0, failed: 0,
+  });
 
   // busca / lookup
   const [lookupNumero, setLookupNumero] = useState("");

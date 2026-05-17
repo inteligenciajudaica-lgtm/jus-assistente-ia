@@ -148,18 +148,45 @@ export function AdminProcessTracking() {
   };
 
   const handleLookup = async () => {
-    if (!lookupNumero.trim()) return;
+    const numero = lookupNumero.trim();
+    if (!numero) return;
+
+    // Validação local antes de chamar a API
+    const digits = numero.replace(/\D/g, "");
+    if (digits.length !== 20) {
+      toast({
+        title: "Número CNJ inválido",
+        description: `Foram informados ${digits.length} dígitos. O CNJ exige exatamente 20 dígitos (formato NNNNNNN-DD.AAAA.J.TR.OOOO).`,
+        variant: "destructive",
+      });
+      setLookupResult({
+        invalid: true,
+        message: `Número inválido — ${digits.length} dígitos informados, são necessários 20.`,
+      });
+      return;
+    }
+
     setLooking(true);
     setLookupResult(null);
     try {
       const { data, error } = await supabase.functions.invoke("track-process", {
-        body: { action: "lookup", numeroProcesso: lookupNumero.trim() },
+        body: { action: "lookup", numeroProcesso: numero },
       });
       if (error) throw error;
+      if (data?.success === false) {
+        toast({ title: "Falha na consulta", description: data.error, variant: "destructive" });
+        setLookupResult(data);
+        return;
+      }
       setLookupResult(data);
       if (data?.results?.[0]) {
-        setNewNumero(lookupNumero.trim());
+        setNewNumero(numero);
         setNewTribunal(data.results[0].tribunal);
+      } else if (data?.notFound) {
+        toast({
+          title: "Processo não localizado",
+          description: data.message ?? "Verifique o número ou selecione manualmente o tribunal.",
+        });
       }
     } catch (e) {
       toast({ title: "Falha na consulta", description: e instanceof Error ? e.message : "erro", variant: "destructive" });
@@ -405,19 +432,37 @@ export function AdminProcessTracking() {
         </div>
 
         {lookupResult && (
-          <div className="border border-border rounded-sm p-3 bg-muted/40 text-xs space-y-1">
-            <div>
-              Tribunal inferido: <strong>{lookupResult.inferred ?? "—"}</strong> ·
-              Resultados: <strong>{lookupResult.results?.length ?? 0}</strong>
-            </div>
-            {(lookupResult.results ?? []).map((r: any, i: number) => (
-              <div key={i} className="border-l-2 border-primary pl-2">
-                <div className="font-mono">{r.numeroProcesso} ({r.tribunal})</div>
-                <div>{r.classe?.nome} — {(r.assuntos ?? []).slice(0,3).map((a:any)=>a.nome).join(", ")}</div>
-              </div>
-            ))}
-            {(lookupResult.errors ?? []).length > 0 && (
-              <div className="text-destructive">Erros: {lookupResult.errors.map((e:any)=>`${e.tribunal}:${e.error}`).join(" | ")}</div>
+          <div className={`border rounded-sm p-3 text-xs space-y-1 ${
+            lookupResult.invalid || lookupResult.success === false
+              ? "border-destructive/40 bg-destructive/5 text-destructive"
+              : lookupResult.notFound
+              ? "border-amber-500/40 bg-amber-500/5"
+              : "border-border bg-muted/40"
+          }`}>
+            {lookupResult.invalid && <div className="font-medium">{lookupResult.message}</div>}
+            {lookupResult.success === false && <div className="font-medium">{lookupResult.error}</div>}
+            {!lookupResult.invalid && lookupResult.success !== false && (
+              <>
+                <div>
+                  Tribunal inferido: <strong>{lookupResult.inferred ?? "—"}</strong> ·
+                  Tribunais consultados: <strong>{(lookupResult.tribunaisConsultados ?? []).join(", ") || "—"}</strong> ·
+                  Resultados: <strong>{lookupResult.results?.length ?? 0}</strong>
+                </div>
+                {lookupResult.notFound && (
+                  <div className="font-medium text-amber-700 dark:text-amber-400">
+                    {lookupResult.message}
+                  </div>
+                )}
+                {(lookupResult.results ?? []).map((r: any, i: number) => (
+                  <div key={i} className="border-l-2 border-primary pl-2">
+                    <div className="font-mono">{r.numeroProcesso} ({r.tribunal})</div>
+                    <div>{r.classe?.nome} — {(r.assuntos ?? []).slice(0,3).map((a:any)=>a.nome).join(", ")}</div>
+                  </div>
+                ))}
+                {(lookupResult.errors ?? []).length > 0 && (
+                  <div className="text-destructive">Erros: {lookupResult.errors.map((e:any)=>`${e.tribunal}:${e.error}`).join(" | ")}</div>
+                )}
+              </>
             )}
           </div>
         )}

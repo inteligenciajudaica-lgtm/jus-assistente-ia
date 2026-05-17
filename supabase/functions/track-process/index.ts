@@ -111,6 +111,20 @@ Deno.serve(async (req) => {
     if (action === "lookup") {
       const numero = String(body.numeroProcesso || "").trim();
       if (!numero) throw new Error("numeroProcesso obrigatório");
+
+      // Validação do CNJ: exige exatamente 20 dígitos
+      const digits = numero.replace(/\D/g, "");
+      if (digits.length !== 20) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Número CNJ inválido: foram informados ${digits.length} dígitos, mas o padrão exige 20 (formato NNNNNNN-DD.AAAA.J.TR.OOOO).`,
+          digitsProvided: digits.length,
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const explicitTribs: string[] | undefined = body.tribunais;
       const inferred = inferTribunalFromCNJ(numero);
       const tribs = explicitTribs && explicitTribs.length
@@ -130,7 +144,17 @@ Deno.serve(async (req) => {
         }
       }));
 
-      return new Response(JSON.stringify({ success: true, results, errors, inferred }), {
+      return new Response(JSON.stringify({
+        success: true,
+        results,
+        errors,
+        inferred,
+        tribunaisConsultados: tribs,
+        notFound: results.length === 0,
+        message: results.length === 0
+          ? `Processo não localizado nos tribunais consultados (${tribs.join(", ")}). Verifique o número ou selecione manualmente o tribunal.`
+          : undefined,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

@@ -7,6 +7,7 @@ import { AdminUsersPanel } from "@/components/admin/AdminUsersPanel";
 import { AdminPlansPanel } from "@/components/admin/AdminPlansPanel";
 import { AdminAISettings } from "@/components/admin/AdminAISettings";
 import { AdminJurisprudenceSettings } from "@/components/admin/AdminJurisprudenceSettings";
+import { AdminProcessTracking } from "@/components/admin/AdminProcessTracking";
 import { AdminApiKeys } from "@/components/admin/AdminApiKeys";
 import { Settings, Users, CreditCard, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -515,7 +515,35 @@ export function AdminProcessTracking() {
                 </div>
 
                 {isOpen && (
-                  <div className="border-t border-border bg-muted/30 p-3 space-y-2">
+                  <div className="border-t border-border bg-muted/30 p-3 space-y-3">
+                    {/* Destaque: último movimento */}
+                    <div className="border-l-4 border-primary bg-primary/5 rounded-sm p-3">
+                      <div className="text-[10px] uppercase tracking-wide text-primary font-semibold mb-1">
+                        Último movimento
+                      </div>
+                      {movs.length > 0 ? (() => {
+                        const last = [...movs].sort((a: any, b: any) => {
+                          const da = new Date(a.dataHora ?? 0).getTime();
+                          const db = new Date(b.dataHora ?? 0).getTime();
+                          return db - da;
+                        })[0];
+                        return (
+                          <>
+                            <div className="text-sm font-medium text-foreground">{last.nome ?? p.ultimo_movimento ?? "—"}</div>
+                            <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                              <span><span className="text-muted-foreground/70">Data:</span> {formatDate(last.dataHora ?? p.ultimo_movimento_data)}</span>
+                              <span><span className="text-muted-foreground/70">Órgão julgador:</span> {p.orgao_julgador ?? "—"}</span>
+                              {last.complementosTabelados?.[0]?.descricao && (
+                                <span><span className="text-muted-foreground/70">Detalhe:</span> {last.complementosTabelados[0].descricao}</span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })() : (
+                        <div className="text-xs text-muted-foreground">Sem movimentos registrados.</div>
+                      )}
+                    </div>
+
                     {p.assuntos && p.assuntos.length > 0 && (
                       <div className="text-xs">
                         <span className="text-muted-foreground">Assuntos:</span> {p.assuntos.join(", ")}
@@ -524,16 +552,38 @@ export function AdminProcessTracking() {
                     {p.notes && (
                       <div className="text-xs"><span className="text-muted-foreground">Notas:</span> {p.notes}</div>
                     )}
-                    <div className="text-xs font-medium pt-2">Movimentos ({movs.length})</div>
-                    <div className="max-h-72 overflow-auto space-y-1 text-xs">
-                      {[...movs].reverse().map((m: any, i: number) => (
-                        <div key={i} className="border-l-2 border-border pl-2 py-1">
-                          <div className="font-medium">{m.nome}</div>
-                          <div className="text-muted-foreground text-[11px]">{formatDate(m.dataHora)}</div>
-                        </div>
-                      ))}
-                      {movs.length === 0 && <div className="text-muted-foreground">Sem movimentos disponíveis.</div>}
-                    </div>
+
+                    {/* Histórico completo */}
+                    <details className="group" open>
+                      <summary className="cursor-pointer text-xs font-medium pt-1 flex items-center gap-1 select-none">
+                        <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
+                        Histórico completo de movimentos ({movs.length})
+                      </summary>
+                      <div className="mt-2 max-h-96 overflow-auto space-y-1 text-xs border border-border rounded-sm bg-background">
+                        {[...movs]
+                          .sort((a: any, b: any) => new Date(b.dataHora ?? 0).getTime() - new Date(a.dataHora ?? 0).getTime())
+                          .map((m: any, i: number) => (
+                            <div
+                              key={i}
+                              className={`pl-3 pr-2 py-2 border-l-2 ${i === 0 ? "border-primary bg-primary/5" : "border-border"} ${i !== movs.length - 1 ? "border-b border-b-border" : ""}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium flex-1">{m.nome}</div>
+                                {i === 0 && (
+                                  <span className="text-[9px] uppercase tracking-wide bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
+                                    Último
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-muted-foreground text-[11px] mt-0.5">
+                                {formatDate(m.dataHora)}
+                                {m.complementosTabelados?.[0]?.descricao && ` · ${m.complementosTabelados[0].descricao}`}
+                              </div>
+                            </div>
+                          ))}
+                        {movs.length === 0 && <div className="text-muted-foreground p-3">Sem movimentos disponíveis.</div>}
+                      </div>
+                    </details>
                   </div>
                 )}
               </div>

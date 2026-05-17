@@ -115,12 +115,14 @@ export function GenerateDocumentDialog({ open: controlledOpen, onOpenChange, ini
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 px-2 sm:px-3">
-          <FileText className="size-4" />
-          <span className="hidden sm:inline">Gerar Peça</span>
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2 px-2 sm:px-3">
+            <FileText className="size-4" />
+            <span className="hidden sm:inline">Gerar Peça</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Gerar Peça Jurídica (.docx)</DialogTitle>

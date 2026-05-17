@@ -133,6 +133,9 @@ export function GenerateDocumentDialog({ open: controlledOpen, onOpenChange, ini
               <Select value={docType} onValueChange={setDocType}>
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
+                  {docType && !DOCUMENT_TYPES.some(dt => dt.value === docType) && (
+                    <SelectItem value={docType}>{docType}</SelectItem>
+                  )}
                   {DOCUMENT_TYPES.map(dt => (
                     <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                   ))}

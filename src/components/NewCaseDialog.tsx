@@ -260,9 +260,9 @@ export function NewCaseDialog({ onCreated }: NewCaseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5">
+        <Button size="sm" className="gap-1.5 px-2 sm:px-3">
           <Plus className="size-3.5" />
-          Novo Processo
+          <span className="hidden sm:inline">Novo Processo</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">

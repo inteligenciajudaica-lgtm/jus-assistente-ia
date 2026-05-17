@@ -78,7 +78,7 @@ export default function ConversasPage() {
       <AppSidebar />
       <main className="flex-1 flex flex-col min-w-0">
         <DashboardHeader />
-        <section className="flex-1 overflow-y-auto p-8 space-y-6">
+        <section className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
           <h1 className="text-xl font-medium">Conversas com IA</h1>
 
           <div className="flex items-center bg-card border border-border rounded-sm px-3 py-2 max-w-md">

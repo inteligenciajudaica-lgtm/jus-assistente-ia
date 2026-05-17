@@ -6,10 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Scale, Plus, RefreshCw, Trash2, Search, ChevronDown, ChevronRight, ExternalLink, Eye, EyeOff,
+  CheckCircle2, XCircle, RotateCw,
 } from "lucide-react";
+
+type SyncState = { status: "idle" | "syncing" | "success" | "error"; message?: string; at?: number };
 
 interface TrackingConfig {
   enabled: boolean;

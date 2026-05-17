@@ -411,14 +411,36 @@ export function AdminProcessTracking() {
 
       {/* LISTA */}
       <div className="bg-card border border-border rounded-sm p-6 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <Label className="text-sm font-medium">
             Processos acompanhados ({tracked.length})
           </Label>
-          <Button variant="ghost" size="sm" onClick={refreshList}>
-            <RefreshCw className="size-3 mr-1" /> Atualizar lista
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={refreshList} disabled={bulkSync.active}>
+              <RefreshCw className="size-3 mr-1" /> Atualizar lista
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSyncAll}
+              disabled={bulkSync.active || tracked.length === 0}
+            >
+              {bulkSync.active
+                ? <Loader2 className="size-3 mr-1 animate-spin" />
+                : <RotateCw className="size-3 mr-1" />}
+              Sincronizar todos
+            </Button>
+          </div>
         </div>
+
+        {bulkSync.active && (
+          <div className="space-y-1">
+            <Progress value={(bulkSync.done / Math.max(1, bulkSync.total)) * 100} className="h-1.5" />
+            <div className="text-[11px] text-muted-foreground">
+              Sincronizando {bulkSync.done}/{bulkSync.total}
+              {bulkSync.failed > 0 && <span className="text-destructive"> · {bulkSync.failed} com erro</span>}
+            </div>
+          </div>
+        )}
 
         {tracked.length === 0 && (
           <p className="text-xs text-muted-foreground">Nenhum processo acompanhado ainda.</p>
@@ -428,6 +450,8 @@ export function AdminProcessTracking() {
           {tracked.map((p) => {
             const isOpen = expanded[p.id];
             const movs = (p.raw_data?.movimentos ?? []) as any[];
+            const sync = syncStates[p.id] ?? { status: "idle" as const };
+            const isSyncing = sync.status === "syncing";
             return (
               <div key={p.id} className="border border-border rounded-sm">
                 <div className="p-3 flex items-start gap-3">
@@ -442,6 +466,21 @@ export function AdminProcessTracking() {
                       <span className="font-mono text-xs">{formatCNJ(p.numero_processo)}</span>
                       <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded">{p.tribunal}</span>
                       {p.nickname && <span className="text-xs font-medium">— {p.nickname}</span>}
+                      {sync.status === "syncing" && (
+                        <span className="text-[10px] inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          <Loader2 className="size-3 animate-spin" /> sincronizando…
+                        </span>
+                      )}
+                      {sync.status === "success" && (
+                        <span className="text-[10px] inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded">
+                          <CheckCircle2 className="size-3" /> {sync.message ?? "atualizado"}
+                        </span>
+                      )}
+                      {sync.status === "error" && (
+                        <span className="text-[10px] inline-flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-0.5 rounded">
+                          <XCircle className="size-3" /> {sync.message ?? "erro"}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {p.classe ?? "—"} · {p.orgao_julgador ?? "—"} · {p.movimentos_count} movimentos
@@ -452,12 +491,24 @@ export function AdminProcessTracking() {
                     <div className="text-[10px] text-muted-foreground mt-0.5">
                       Sincronizado em {formatDate(p.last_synced_at)}
                     </div>
+                    {isSyncing && (
+                      <Progress value={undefined as any} className="h-1 mt-2" />
+                    )}
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => handleSync(p.id)} disabled={syncingId === p.id}>
-                      {syncingId === p.id ? <Loader2 className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSync(p.id)}
+                      disabled={isSyncing || bulkSync.active}
+                      title="Sincronizar agora"
+                    >
+                      {isSyncing
+                        ? <Loader2 className="size-3 animate-spin mr-1" />
+                        : <RefreshCw className="size-3 mr-1" />}
+                      Sincronizar
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleRemove(p.id)}>
+                    <Button size="sm" variant="ghost" onClick={() => handleRemove(p.id)} disabled={isSyncing}>
                       <Trash2 className="size-3 text-destructive" />
                     </Button>
                   </div>

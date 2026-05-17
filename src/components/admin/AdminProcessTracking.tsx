@@ -96,17 +96,28 @@ export function AdminProcessTracking() {
   const [looking, setLooking] = useState(false);
   const [lookupResult, setLookupResult] = useState<any>(null);
 
+  const [lastCronRun, setLastCronRun] = useState<any>(null);
+
+  const loadLastCronRun = async () => {
+    const { data } = await supabase
+      .from("app_settings").select("value")
+      .eq("key", "process_tracking_cron_last_run").maybeSingle();
+    setLastCronRun(data?.value ?? null);
+  };
+
   useEffect(() => {
     (async () => {
-      const [cfgRes, listRes] = await Promise.all([
+      const [cfgRes, listRes, runRes] = await Promise.all([
         supabase.from("app_settings").select("value").eq("key", "process_tracking_config").maybeSingle(),
         supabase.from("tracked_processes").select("*").order("updated_at", { ascending: false }),
+        supabase.from("app_settings").select("value").eq("key", "process_tracking_cron_last_run").maybeSingle(),
       ]);
       if (cfgRes.data?.value) {
         const v = cfgRes.data.value as any;
         setConfig((c) => ({ ...c, ...v }));
       }
       if (listRes.data) setTracked(listRes.data as any);
+      if (runRes.data?.value) setLastCronRun(runRes.data.value);
       setLoading(false);
     })();
   }, []);
@@ -340,6 +351,38 @@ export function AdminProcessTracking() {
           {saving && <Loader2 className="size-4 animate-spin mr-2" />}
           Salvar configurações
         </Button>
+
+        {/* Status da sincronização automática */}
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-xs font-medium">Sincronização automática (cron)</Label>
+            <Button variant="ghost" size="sm" onClick={loadLastCronRun}>
+              <RefreshCw className="size-3 mr-1" /> Recarregar
+            </Button>
+          </div>
+          <div className="text-[11px] text-muted-foreground space-y-1">
+            <div>
+              Agendado a cada hora. A função processa apenas processos com mais de{" "}
+              <strong>{config.autoSyncHours}h</strong> sem atualização
+              {config.enabled ? "" : " (atualmente desativado)"}.
+            </div>
+            {lastCronRun ? (
+              <div className="bg-muted/50 rounded-sm p-2 mt-1 space-y-0.5">
+                <div>Última execução: <strong>{formatDate(lastCronRun.ranAt)}</strong></div>
+                <div>
+                  Considerados: {lastCronRun.considered ?? 0} ·
+                  <span className="text-emerald-600 dark:text-emerald-400"> {lastCronRun.synced ?? 0} sincronizados</span>
+                  {(lastCronRun.failed ?? 0) > 0 && (
+                    <span className="text-destructive"> · {lastCronRun.failed} falhas</span>
+                  )}
+                  {typeof lastCronRun.durationMs === "number" && ` · ${lastCronRun.durationMs}ms`}
+                </div>
+              </div>
+            ) : (
+              <div className="italic">Nenhuma execução registrada ainda.</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* LOOKUP + ADICIONAR */}

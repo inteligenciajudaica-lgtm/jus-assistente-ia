@@ -1,5 +1,6 @@
-import { LogOut, Shield, Zap, Menu } from "lucide-react";
+import { LogOut, Shield, Zap, Menu, FilePlus2 } from "lucide-react";
 import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare } from "lucide-react";
+import { CreatePieceDialog } from "@/components/CreatePieceDialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";

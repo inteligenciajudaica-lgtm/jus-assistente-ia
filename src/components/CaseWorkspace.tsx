@@ -144,7 +144,7 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
         </div>
 
         {/* Tab bar */}
-        <div className="flex px-4 gap-1">
+        <div className="flex px-2 sm:px-4 gap-1 overflow-x-auto scrollbar-thin">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -152,7 +152,7 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${
                   isActive
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"

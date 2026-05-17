@@ -185,18 +185,45 @@ export function AdminProcessTracking() {
     }
   };
 
-  const handleSync = async (id: string) => {
-    setSyncingId(id);
+  const syncOne = async (id: string): Promise<{ ok: boolean; message?: string }> => {
+    setSyncStates((s) => ({ ...s, [id]: { status: "syncing" } }));
     try {
-      const { error } = await supabase.functions.invoke("track-process", { body: { action: "sync", id } });
+      const { data, error } = await supabase.functions.invoke("track-process", { body: { action: "sync", id } });
       if (error) throw error;
-      toast({ title: "Atualizado" });
-      await refreshList();
+      const movs = (data?.process?.movimentos_count ?? data?.movimentos_count) as number | undefined;
+      const msg = typeof movs === "number" ? `${movs} movimentos` : "atualizado";
+      setSyncStates((s) => ({ ...s, [id]: { status: "success", message: msg, at: Date.now() } }));
+      return { ok: true, message: msg };
     } catch (e) {
-      toast({ title: "Erro ao sincronizar", description: e instanceof Error ? e.message : "erro", variant: "destructive" });
-    } finally {
-      setSyncingId(null);
+      const message = e instanceof Error ? e.message : "erro";
+      setSyncStates((s) => ({ ...s, [id]: { status: "error", message, at: Date.now() } }));
+      return { ok: false, message };
     }
+  };
+
+  const handleSync = async (id: string) => {
+    const r = await syncOne(id);
+    if (r.ok) toast({ title: "Processo atualizado", description: r.message });
+    else toast({ title: "Erro ao sincronizar", description: r.message, variant: "destructive" });
+    await refreshList();
+  };
+
+  const handleSyncAll = async () => {
+    if (tracked.length === 0) return;
+    setBulkSync({ active: true, done: 0, total: tracked.length, failed: 0 });
+    let failed = 0;
+    for (let i = 0; i < tracked.length; i++) {
+      const r = await syncOne(tracked[i].id);
+      if (!r.ok) failed++;
+      setBulkSync((b) => ({ ...b, done: i + 1, failed }));
+    }
+    await refreshList();
+    setBulkSync((b) => ({ ...b, active: false }));
+    toast({
+      title: "Sincronização concluída",
+      description: `${tracked.length - failed}/${tracked.length} com sucesso${failed ? ` · ${failed} falharam` : ""}`,
+      variant: failed ? "destructive" : "default",
+    });
   };
 
   const handleRemove = async (id: string) => {

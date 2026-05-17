@@ -21,15 +21,28 @@ const DOCUMENT_TYPES = [
   { value: "habeas corpus", label: "Habeas Corpus" },
 ];
 
-export function GenerateDocumentDialog() {
+interface GenerateDocumentDialogProps {
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  initialDocType?: string;
+  initialTitle?: string;
+  hideTrigger?: boolean;
+}
+
+export function GenerateDocumentDialog({ open: controlledOpen, onOpenChange, initialDocType, initialTitle, hideTrigger }: GenerateDocumentDialogProps = {}) {
   const { session } = useAuth();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setInternalOpen(v); };
   const [loading, setLoading] = useState(false);
   const [cases, setCases] = useState<{ id: string; client_name: string; case_number: string | null }[]>([]);
 
-  const [docType, setDocType] = useState("");
-  const [title, setTitle] = useState("");
+  const [docType, setDocType] = useState(initialDocType || "");
+  const [title, setTitle] = useState(initialTitle || "");
+
+  useEffect(() => { if (initialDocType !== undefined) setDocType(initialDocType); }, [initialDocType]);
+  useEffect(() => { if (initialTitle !== undefined) setTitle(initialTitle); }, [initialTitle]);
   const [caseId, setCaseId] = useState("");
   const [court, setCourt] = useState("");
   const [courtDivision, setCourtDivision] = useState("");
@@ -102,12 +115,14 @@ export function GenerateDocumentDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 px-2 sm:px-3">
-          <FileText className="size-4" />
-          <span className="hidden sm:inline">Gerar Peça</span>
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2 px-2 sm:px-3">
+            <FileText className="size-4" />
+            <span className="hidden sm:inline">Gerar Peça</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Gerar Peça Jurídica (.docx)</DialogTitle>
@@ -120,6 +135,9 @@ export function GenerateDocumentDialog() {
               <Select value={docType} onValueChange={setDocType}>
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
+                  {docType && !DOCUMENT_TYPES.some(dt => dt.value === docType) && (
+                    <SelectItem value={docType}>{docType}</SelectItem>
+                  )}
                   {DOCUMENT_TYPES.map(dt => (
                     <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
                   ))}

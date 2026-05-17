@@ -1,5 +1,6 @@
-import { LogOut, Shield, Zap, Menu } from "lucide-react";
+import { LogOut, Shield, Zap, Menu, FilePlus2 } from "lucide-react";
 import { LayoutDashboard, FolderOpen, CalendarClock, FileText, MessageSquare } from "lucide-react";
+import { CreatePieceDialog } from "@/components/CreatePieceDialog";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -101,6 +102,16 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="relative flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <div className="px-1 pb-2" onClick={onNavigate}>
+          <CreatePieceDialog
+            trigger={
+              <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium bg-gradient-primary text-white shadow-glow surface-interactive hover:opacity-95">
+                <FilePlus2 className="size-4" />
+                Criar Peça
+              </button>
+            }
+          />
+        </div>
         {navItems.map((item) => {
           const showSection = item.section !== lastSection;
           if (showSection) lastSection = item.section!;

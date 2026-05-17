@@ -21,15 +21,28 @@ const DOCUMENT_TYPES = [
   { value: "habeas corpus", label: "Habeas Corpus" },
 ];
 
-export function GenerateDocumentDialog() {
+interface GenerateDocumentDialogProps {
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  initialDocType?: string;
+  initialTitle?: string;
+  hideTrigger?: boolean;
+}
+
+export function GenerateDocumentDialog({ open: controlledOpen, onOpenChange, initialDocType, initialTitle, hideTrigger }: GenerateDocumentDialogProps = {}) {
   const { session } = useAuth();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setInternalOpen(v); };
   const [loading, setLoading] = useState(false);
   const [cases, setCases] = useState<{ id: string; client_name: string; case_number: string | null }[]>([]);
 
-  const [docType, setDocType] = useState("");
-  const [title, setTitle] = useState("");
+  const [docType, setDocType] = useState(initialDocType || "");
+  const [title, setTitle] = useState(initialTitle || "");
+
+  useEffect(() => { if (initialDocType !== undefined) setDocType(initialDocType); }, [initialDocType]);
+  useEffect(() => { if (initialTitle !== undefined) setTitle(initialTitle); }, [initialTitle]);
   const [caseId, setCaseId] = useState("");
   const [court, setCourt] = useState("");
   const [courtDivision, setCourtDivision] = useState("");

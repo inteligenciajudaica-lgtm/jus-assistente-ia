@@ -492,7 +492,9 @@ export function AdminProcessTracking() {
                       Sincronizado em {formatDate(p.last_synced_at)}
                     </div>
                     {isSyncing && (
-                      <Progress value={undefined as any} className="h-1 mt-2" />
+                      <div className="h-1 mt-2 bg-muted rounded overflow-hidden">
+                        <div className="h-full w-1/3 bg-primary animate-[slide_1.2s_ease-in-out_infinite]" />
+                      </div>
                     )}
                   </div>
                   <div className="flex gap-1">

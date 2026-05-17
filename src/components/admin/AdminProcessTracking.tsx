@@ -6,10 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Scale, Plus, RefreshCw, Trash2, Search, ChevronDown, ChevronRight, ExternalLink, Eye, EyeOff,
+  CheckCircle2, XCircle, RotateCw,
 } from "lucide-react";
+
+type SyncState = { status: "idle" | "syncing" | "success" | "error"; message?: string; at?: number };
 
 interface TrackingConfig {
   enabled: boolean;
@@ -82,7 +86,10 @@ export function AdminProcessTracking() {
   const [newNickname, setNewNickname] = useState("");
   const [newNotes, setNewNotes] = useState("");
   const [adding, setAdding] = useState(false);
-  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({});
+  const [bulkSync, setBulkSync] = useState<{ active: boolean; done: number; total: number; failed: number }>({
+    active: false, done: 0, total: 0, failed: 0,
+  });
 
   // busca / lookup
   const [lookupNumero, setLookupNumero] = useState("");
@@ -178,18 +185,45 @@ export function AdminProcessTracking() {
     }
   };
 
-  const handleSync = async (id: string) => {
-    setSyncingId(id);
+  const syncOne = async (id: string): Promise<{ ok: boolean; message?: string }> => {
+    setSyncStates((s) => ({ ...s, [id]: { status: "syncing" } }));
     try {
-      const { error } = await supabase.functions.invoke("track-process", { body: { action: "sync", id } });
+      const { data, error } = await supabase.functions.invoke("track-process", { body: { action: "sync", id } });
       if (error) throw error;
-      toast({ title: "Atualizado" });
-      await refreshList();
+      const movs = (data?.process?.movimentos_count ?? data?.movimentos_count) as number | undefined;
+      const msg = typeof movs === "number" ? `${movs} movimentos` : "atualizado";
+      setSyncStates((s) => ({ ...s, [id]: { status: "success", message: msg, at: Date.now() } }));
+      return { ok: true, message: msg };
     } catch (e) {
-      toast({ title: "Erro ao sincronizar", description: e instanceof Error ? e.message : "erro", variant: "destructive" });
-    } finally {
-      setSyncingId(null);
+      const message = e instanceof Error ? e.message : "erro";
+      setSyncStates((s) => ({ ...s, [id]: { status: "error", message, at: Date.now() } }));
+      return { ok: false, message };
     }
+  };
+
+  const handleSync = async (id: string) => {
+    const r = await syncOne(id);
+    if (r.ok) toast({ title: "Processo atualizado", description: r.message });
+    else toast({ title: "Erro ao sincronizar", description: r.message, variant: "destructive" });
+    await refreshList();
+  };
+
+  const handleSyncAll = async () => {
+    if (tracked.length === 0) return;
+    setBulkSync({ active: true, done: 0, total: tracked.length, failed: 0 });
+    let failed = 0;
+    for (let i = 0; i < tracked.length; i++) {
+      const r = await syncOne(tracked[i].id);
+      if (!r.ok) failed++;
+      setBulkSync((b) => ({ ...b, done: i + 1, failed }));
+    }
+    await refreshList();
+    setBulkSync((b) => ({ ...b, active: false }));
+    toast({
+      title: "Sincronização concluída",
+      description: `${tracked.length - failed}/${tracked.length} com sucesso${failed ? ` · ${failed} falharam` : ""}`,
+      variant: failed ? "destructive" : "default",
+    });
   };
 
   const handleRemove = async (id: string) => {
@@ -377,14 +411,36 @@ export function AdminProcessTracking() {
 
       {/* LISTA */}
       <div className="bg-card border border-border rounded-sm p-6 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <Label className="text-sm font-medium">
             Processos acompanhados ({tracked.length})
           </Label>
-          <Button variant="ghost" size="sm" onClick={refreshList}>
-            <RefreshCw className="size-3 mr-1" /> Atualizar lista
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={refreshList} disabled={bulkSync.active}>
+              <RefreshCw className="size-3 mr-1" /> Atualizar lista
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSyncAll}
+              disabled={bulkSync.active || tracked.length === 0}
+            >
+              {bulkSync.active
+                ? <Loader2 className="size-3 mr-1 animate-spin" />
+                : <RotateCw className="size-3 mr-1" />}
+              Sincronizar todos
+            </Button>
+          </div>
         </div>
+
+        {bulkSync.active && (
+          <div className="space-y-1">
+            <Progress value={(bulkSync.done / Math.max(1, bulkSync.total)) * 100} className="h-1.5" />
+            <div className="text-[11px] text-muted-foreground">
+              Sincronizando {bulkSync.done}/{bulkSync.total}
+              {bulkSync.failed > 0 && <span className="text-destructive"> · {bulkSync.failed} com erro</span>}
+            </div>
+          </div>
+        )}
 
         {tracked.length === 0 && (
           <p className="text-xs text-muted-foreground">Nenhum processo acompanhado ainda.</p>
@@ -394,6 +450,8 @@ export function AdminProcessTracking() {
           {tracked.map((p) => {
             const isOpen = expanded[p.id];
             const movs = (p.raw_data?.movimentos ?? []) as any[];
+            const sync = syncStates[p.id] ?? { status: "idle" as const };
+            const isSyncing = sync.status === "syncing";
             return (
               <div key={p.id} className="border border-border rounded-sm">
                 <div className="p-3 flex items-start gap-3">
@@ -408,6 +466,21 @@ export function AdminProcessTracking() {
                       <span className="font-mono text-xs">{formatCNJ(p.numero_processo)}</span>
                       <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded">{p.tribunal}</span>
                       {p.nickname && <span className="text-xs font-medium">— {p.nickname}</span>}
+                      {sync.status === "syncing" && (
+                        <span className="text-[10px] inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          <Loader2 className="size-3 animate-spin" /> sincronizando…
+                        </span>
+                      )}
+                      {sync.status === "success" && (
+                        <span className="text-[10px] inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded">
+                          <CheckCircle2 className="size-3" /> {sync.message ?? "atualizado"}
+                        </span>
+                      )}
+                      {sync.status === "error" && (
+                        <span className="text-[10px] inline-flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-0.5 rounded">
+                          <XCircle className="size-3" /> {sync.message ?? "erro"}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {p.classe ?? "—"} · {p.orgao_julgador ?? "—"} · {p.movimentos_count} movimentos
@@ -418,12 +491,24 @@ export function AdminProcessTracking() {
                     <div className="text-[10px] text-muted-foreground mt-0.5">
                       Sincronizado em {formatDate(p.last_synced_at)}
                     </div>
+                    {isSyncing && (
+                      <Progress value={66} className="h-1 mt-2 animate-pulse" />
+                    )}
                   </div>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => handleSync(p.id)} disabled={syncingId === p.id}>
-                      {syncingId === p.id ? <Loader2 className="size-3 animate-spin" /> : <RefreshCw className="size-3" />}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSync(p.id)}
+                      disabled={isSyncing || bulkSync.active}
+                      title="Sincronizar agora"
+                    >
+                      {isSyncing
+                        ? <Loader2 className="size-3 animate-spin mr-1" />
+                        : <RefreshCw className="size-3 mr-1" />}
+                      Sincronizar
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => handleRemove(p.id)}>
+                    <Button size="sm" variant="ghost" onClick={() => handleRemove(p.id)} disabled={isSyncing}>
                       <Trash2 className="size-3 text-destructive" />
                     </Button>
                   </div>

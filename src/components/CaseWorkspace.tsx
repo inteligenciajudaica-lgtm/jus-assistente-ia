@@ -222,9 +222,9 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
         )}
 
         {activeTab === "documentos" && (
-          <div className="overflow-y-auto h-full p-6">
+          <div className="overflow-y-auto h-full p-4 sm:p-6">
             <div className="max-w-2xl mx-auto space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="text-base font-semibold">Documentos ({docs.length})</h3>
                 <DocumentUploadDialog
                   onUploaded={() => setRefreshKey((k) => k + 1)}
@@ -238,41 +238,43 @@ export function CaseWorkspace({ caseId, caseName, onBack }: CaseWorkspaceProps) 
                   <p className="text-xs mt-1">Use o botão acima para enviar documentos.</p>
                 </div>
               ) : (
-                <div className="border border-border rounded-sm overflow-hidden">
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_120px_120px_100px] gap-2 px-4 py-2.5 bg-muted/60 border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                    <span>Nome</span>
-                    <span>Tipo</span>
-                    <span>Enviado em</span>
-                    <span className="text-center">Análise IA</span>
-                  </div>
-                  {docs.map((doc) => (
-                    <div
-                      key={doc.id}
-                      onClick={() => handleDownload(doc)}
-                      className="grid grid-cols-[1fr_120px_120px_100px] gap-2 items-center px-4 py-3 border-b last:border-b-0 border-border bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {docIcon(doc.file_type)}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{doc.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{formatSize(doc.file_size)}</p>
+                <div className="border border-border rounded-sm overflow-x-auto">
+                  <div className="min-w-[640px]">
+                    {/* Table header */}
+                    <div className="grid grid-cols-[1fr_120px_120px_100px] gap-2 px-4 py-2.5 bg-muted/60 border-b border-border text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                      <span>Nome</span>
+                      <span>Tipo</span>
+                      <span>Enviado em</span>
+                      <span className="text-center">Análise IA</span>
+                    </div>
+                    {docs.map((doc) => (
+                      <div
+                        key={doc.id}
+                        onClick={() => handleDownload(doc)}
+                        className="grid grid-cols-[1fr_120px_120px_100px] gap-2 items-center px-4 py-3 border-b last:border-b-0 border-border bg-card hover:bg-muted/40 transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {docIcon(doc.file_type)}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{doc.name}</p>
+                            <p className="text-[11px] text-muted-foreground">{formatSize(doc.file_size)}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {doc.file_type?.includes("pdf") ? "PDF" :
+                           doc.file_type?.includes("word") || doc.file_type?.includes("doc") ? "DOC" :
+                           doc.file_type?.startsWith("image/") ? "Imagem" : doc.file_type || "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</span>
+                        <div className="flex justify-center">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
+                            <span className="size-1.5 rounded-full bg-warning" />
+                            Pendente
+                          </Badge>
                         </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {doc.file_type?.includes("pdf") ? "PDF" :
-                         doc.file_type?.includes("word") || doc.file_type?.includes("doc") ? "DOC" :
-                         doc.file_type?.startsWith("image/") ? "Imagem" : doc.file_type || "—"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{formatDate(doc.created_at)}</span>
-                      <div className="flex justify-center">
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1">
-                          <span className="size-1.5 rounded-full bg-warning" />
-                          Pendente
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

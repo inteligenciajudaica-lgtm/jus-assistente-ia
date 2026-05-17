@@ -1,9 +1,10 @@
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NewCaseDialog } from "@/components/NewCaseDialog";
 import { GenerateDocumentDialog } from "@/components/GenerateDocumentDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { MobileNavTrigger } from "@/components/AppSidebar";
+import { SystemNoticesPopover } from "@/components/SystemNoticesPopover";
 
 interface DashboardHeaderProps {
   onCaseCreated?: () => void;

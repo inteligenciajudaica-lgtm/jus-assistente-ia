@@ -50,6 +50,22 @@ const LEVEL_STYLE: Record<NoticeLevel, { icon: typeof Info; cls: string }> = {
   success: { icon: CheckCircle2, cls: "text-success" },
 };
 
+function parseNotices(value: any): SystemNotice[] {
+  const raw = value?.notices;
+  if (Array.isArray(raw) && raw.length) {
+    return raw
+      .filter((n) => n && n.id && n.title)
+      .map((n: any) => ({
+        id: String(n.id),
+        title: String(n.title),
+        message: String(n.message ?? ""),
+        level: (n.level as NoticeLevel) ?? "info",
+        created_at: n.created_at,
+      }));
+  }
+  return DEFAULT_NOTICES;
+}
+
 export function SystemNoticesPopover() {
   const [notices, setNotices] = useState<SystemNotice[]>([]);
   const [dismissed, setDismissed] = useState<string[]>(() => readDismissed());
@@ -57,34 +73,44 @@ export function SystemNoticesPopover() {
 
   useEffect(() => {
     let active = true;
-    (async () => {
+
+    const load = async () => {
       const { data } = await supabase
         .from("app_settings")
         .select("value")
         .eq("key", "system_notices")
         .maybeSingle();
       if (!active) return;
-      const raw = (data?.value as any)?.notices;
-      if (Array.isArray(raw) && raw.length) {
-        setNotices(
-          raw
-            .filter((n) => n && n.id && n.title)
-            .map((n: any) => ({
-              id: String(n.id),
-              title: String(n.title),
-              message: String(n.message ?? ""),
-              level: (n.level as NoticeLevel) ?? "info",
-              created_at: n.created_at,
-            })),
-        );
-      } else {
-        setNotices(DEFAULT_NOTICES);
-      }
-    })();
+      setNotices(parseNotices(data?.value));
+    };
+
+    load();
+
+    const channel = supabase
+      .channel("system-notices")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "app_settings", filter: "key=eq.system_notices" },
+        (payload) => {
+          if (!active) return;
+          const newRow = (payload.new ?? payload.old) as { value?: any } | null;
+          if (payload.eventType === "DELETE") {
+            setNotices(DEFAULT_NOTICES);
+          } else if (newRow?.value !== undefined) {
+            setNotices(parseNotices(newRow.value));
+          } else {
+            load();
+          }
+        },
+      )
+      .subscribe();
+
     return () => {
       active = false;
+      supabase.removeChannel(channel);
     };
   }, []);
+
 
   const visible = useMemo(
     () => notices.filter((n) => !dismissed.includes(n.id)),

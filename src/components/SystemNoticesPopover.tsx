@@ -93,12 +93,25 @@ function isExpired(n: SystemNotice, defaultTtlHours: number | null, now: number)
 
 export function SystemNoticesPopover() {
   const [notices, setNotices] = useState<SystemNotice[]>([]);
+  const [defaultTtlHours, setDefaultTtlHours] = useState<number | null>(null);
   const [dismissed, setDismissed] = useState<string[]>(() => readIds(STORAGE_KEY));
   const [read, setRead] = useState<string[]>(() => readIds(READ_STORAGE_KEY));
   const [open, setOpen] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     let active = true;
+
+    const apply = (value: any) => {
+      const parsed = parseSettings(value);
+      setNotices(parsed.notices);
+      setDefaultTtlHours(parsed.defaultTtlHours);
+    };
 
     const load = async () => {
       const { data } = await supabase
@@ -107,7 +120,7 @@ export function SystemNoticesPopover() {
         .eq("key", "system_notices")
         .maybeSingle();
       if (!active) return;
-      setNotices(parseNotices(data?.value));
+      apply(data?.value);
     };
 
     load();
@@ -122,8 +135,9 @@ export function SystemNoticesPopover() {
           const newRow = (payload.new ?? payload.old) as { value?: any } | null;
           if (payload.eventType === "DELETE") {
             setNotices(DEFAULT_NOTICES);
+            setDefaultTtlHours(null);
           } else if (newRow?.value !== undefined) {
-            setNotices(parseNotices(newRow.value));
+            apply(newRow.value);
           } else {
             load();
           }
@@ -139,9 +153,10 @@ export function SystemNoticesPopover() {
 
 
   const visible = useMemo(
-    () => notices.filter((n) => !dismissed.includes(n.id)),
-    [notices, dismissed],
+    () => notices.filter((n) => !dismissed.includes(n.id) && !isExpired(n, defaultTtlHours, now)),
+    [notices, dismissed, defaultTtlHours, now],
   );
+
 
   const unreadCount = useMemo(
     () => visible.filter((n) => !read.includes(n.id)).length,

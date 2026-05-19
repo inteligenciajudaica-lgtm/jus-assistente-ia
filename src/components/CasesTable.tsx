@@ -92,10 +92,10 @@ export function CasesTable({ onSelectCase, selectedCaseId }: CasesTableProps) {
   return (
     <div className="surface-card rounded-xl overflow-hidden animate-fade-in">
       {/* Header */}
-      <div className="p-4 border-b border-border bg-gradient-card flex items-center gap-3">
+      <div className="p-3 sm:p-4 border-b border-border bg-gradient-card flex items-center gap-2 sm:gap-3 flex-wrap">
         <h3 className="text-sm font-semibold tracking-tight">Processos</h3>
         <span className="text-[11px] text-muted-foreground px-1.5 py-0.5 rounded-full bg-muted tabular-nums">{cases.length}</span>
-        <div className="ml-auto flex items-center bg-background border border-border rounded-lg px-3 py-1.5 surface-interactive focus-within:border-accent/60 focus-within:shadow-[var(--shadow-focus)] w-72">
+        <div className="w-full sm:w-72 sm:ml-auto order-3 sm:order-none flex items-center bg-background border border-border rounded-lg px-3 py-1.5 surface-interactive focus-within:border-accent/60 focus-within:shadow-[var(--shadow-focus)]">
           <Search className="size-3.5 text-muted-foreground mr-2" />
           <input
             type="text"
@@ -107,7 +107,41 @@ export function CasesTable({ onSelectCase, selectedCaseId }: CasesTableProps) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile: card list */}
+      <div className="md:hidden divide-y divide-border max-h-[70vh] overflow-y-auto">
+        {filtered.map((c) => {
+          const isSelected = selectedCaseId === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => onSelectCase?.(c.id)}
+              className={`w-full text-left p-4 surface-interactive relative ${isSelected ? "bg-accent/5" : "active:bg-muted/40"}`}
+            >
+              {isSelected && <span className="absolute left-0 top-3 bottom-3 w-[3px] bg-gradient-primary rounded-r-full shadow-glow" />}
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <p className={`font-mono text-[11px] font-medium truncate ${isSelected ? "text-accent" : "text-muted-foreground"}`}>
+                  {c.case_number || "—"}
+                </p>
+                <span className="shrink-0 inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full bg-muted/60 border border-border/60 font-medium">
+                  <div className={`size-1.5 rounded-full ${statusColors[c.status] || "bg-muted-foreground/40"}`} />
+                  {statusLabels[c.status] || c.status}
+                </span>
+              </div>
+              <p className="text-sm font-medium truncate">{c.client_name}</p>
+              <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                <span className="truncate">
+                  {c.court ? `${c.court}${c.court_division ? ` · ${c.court_division}` : ""}` : "—"}
+                  {c.area_of_law ? ` · ${c.area_of_law}` : ""}
+                </span>
+                <span className="tabular-nums shrink-0">{formatDate(c.updated_at)}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Desktop/tablet: table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-muted/40 text-muted-foreground border-b border-border">
             <tr>

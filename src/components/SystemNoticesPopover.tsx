@@ -27,23 +27,25 @@ const DEFAULT_NOTICES: SystemNotice[] = [
 ];
 
 const STORAGE_KEY = "juris.system_notices.dismissed";
+const READ_STORAGE_KEY = "juris.system_notices.read";
 
-function readDismissed(): string[] {
+function readIds(key: string): string[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function writeDismissed(ids: string[]) {
+function writeIds(key: string, ids: string[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+    localStorage.setItem(key, JSON.stringify(ids));
   } catch {
     /* ignore */
   }
 }
+
 
 const LEVEL_STYLE: Record<NoticeLevel, { icon: typeof Info; cls: string }> = {
   info: { icon: Info, cls: "text-info" },

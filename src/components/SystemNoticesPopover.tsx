@@ -162,8 +162,10 @@ export function SystemNoticesPopover() {
           aria-label="Avisos do sistema"
         >
           <Bell className="size-4" />
-          {visible.length > 0 && (
-            <span className="absolute top-1.5 right-1.5 size-1.5 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 inline-flex items-center justify-center rounded-full bg-accent text-[9px] font-semibold text-accent-foreground tabular-nums shadow-[0_0_8px_hsl(var(--accent))]">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
           )}
         </Button>
       </PopoverTrigger>
@@ -172,24 +174,37 @@ export function SystemNoticesPopover() {
         sideOffset={8}
         className="w-[min(92vw,360px)] p-0 surface-glass border-border"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <span className="text-sm font-medium">Avisos do sistema</span>
-            {visible.length > 0 && (
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground">
-                {visible.length}
+            {unreadCount > 0 && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-accent/40 bg-accent/10 text-accent">
+                {unreadCount} novo{unreadCount > 1 ? "s" : ""}
               </span>
             )}
           </div>
-          {visible.length > 0 && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Limpar todos
-            </button>
-          )}
+          <div className="flex items-center gap-3 shrink-0">
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={markAllRead}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                title="Marcar todos como lidos"
+              >
+                <CheckCheck className="size-3.5" />
+                Marcar lidos
+              </button>
+            )}
+            {visible.length > 0 && (
+              <button
+                type="button"
+                onClick={clearAll}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
         </div>
         <ScrollArea className="max-h-[60vh]">
           {visible.length === 0 ? (
@@ -201,11 +216,22 @@ export function SystemNoticesPopover() {
               {visible.map((n) => {
                 const lvl = LEVEL_STYLE[n.level ?? "info"];
                 const Icon = lvl.icon;
+                const isRead = read.includes(n.id);
                 return (
-                  <li key={n.id} className="px-4 py-3 flex items-start gap-3 group">
+                  <li
+                    key={n.id}
+                    className={cn(
+                      "px-4 py-3 flex items-start gap-3 group relative transition-opacity",
+                      isRead ? "opacity-60" : "bg-accent/[0.03]",
+                    )}
+                    onClick={() => markRead(n.id)}
+                  >
+                    {!isRead && (
+                      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 size-1.5 rounded-full bg-accent shadow-[0_0_6px_hsl(var(--accent))]" />
+                    )}
                     <Icon className={cn("size-4 mt-0.5 shrink-0", lvl.cls)} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-tight">{n.title}</p>
+                      <p className={cn("text-sm leading-tight", isRead ? "font-normal" : "font-medium")}>{n.title}</p>
                       {n.message && (
                         <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                           {n.message}
@@ -217,20 +243,35 @@ export function SystemNoticesPopover() {
                         </p>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => dismiss(n.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                      aria-label="Dispensar aviso"
-                    >
-                      <X className="size-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {!isRead && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); markRead(n.id); }}
+                          className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted"
+                          aria-label="Marcar como lido"
+                          title="Marcar como lido"
+                        >
+                          <Check className="size-3.5" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); dismiss(n.id); }}
+                        className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted"
+                        aria-label="Dispensar aviso"
+                        title="Dispensar"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
                   </li>
                 );
               })}
             </ul>
           )}
         </ScrollArea>
+
       </PopoverContent>
     </Popover>
   );

@@ -15,6 +15,7 @@ interface SystemNotice {
   message: string;
   level?: NoticeLevel;
   created_at?: string;
+  expires_at?: string | null;
 }
 
 const DEFAULT_NOTICES: SystemNotice[] = [
@@ -53,21 +54,42 @@ const LEVEL_STYLE: Record<NoticeLevel, { icon: typeof Info; cls: string }> = {
   success: { icon: CheckCircle2, cls: "text-success" },
 };
 
-function parseNotices(value: any): SystemNotice[] {
+interface ParsedSettings {
+  notices: SystemNotice[];
+  defaultTtlHours: number | null;
+}
+
+function parseSettings(value: any): ParsedSettings {
+  const defaultTtlHours = typeof value?.default_ttl_hours === "number" && value.default_ttl_hours > 0
+    ? value.default_ttl_hours
+    : null;
   const raw = value?.notices;
   if (Array.isArray(raw) && raw.length) {
-    return raw
-      .filter((n) => n && n.id && n.title)
-      .map((n: any) => ({
-        id: String(n.id),
-        title: String(n.title),
-        message: String(n.message ?? ""),
-        level: (n.level as NoticeLevel) ?? "info",
-        created_at: n.created_at,
-      }));
+    return {
+      defaultTtlHours,
+      notices: raw
+        .filter((n) => n && n.id && n.title)
+        .map((n: any) => ({
+          id: String(n.id),
+          title: String(n.title),
+          message: String(n.message ?? ""),
+          level: (n.level as NoticeLevel) ?? "info",
+          created_at: n.created_at,
+          expires_at: n.expires_at ?? null,
+        })),
+    };
   }
-  return DEFAULT_NOTICES;
+  return { defaultTtlHours, notices: DEFAULT_NOTICES };
 }
+
+function isExpired(n: SystemNotice, defaultTtlHours: number | null, now: number): boolean {
+  if (n.expires_at) return new Date(n.expires_at).getTime() < now;
+  if (defaultTtlHours && n.created_at) {
+    return new Date(n.created_at).getTime() + defaultTtlHours * 3600 * 1000 < now;
+  }
+  return false;
+}
+
 
 export function SystemNoticesPopover() {
   const [notices, setNotices] = useState<SystemNotice[]>([]);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, AlertTriangle, Info, CheckCircle2, X } from "lucide-react";
+import { Bell, AlertTriangle, Info, CheckCircle2, X, Check, CheckCheck } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";

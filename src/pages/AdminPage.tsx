@@ -8,6 +8,7 @@ import { AdminAISettings } from "@/components/admin/AdminAISettings";
 import { AdminJurisprudenceSettings } from "@/components/admin/AdminJurisprudenceSettings";
 import { AdminProcessTracking } from "@/components/admin/AdminProcessTracking";
 import { AdminApiKeys } from "@/components/admin/AdminApiKeys";
+import { AdminSystemNotices } from "@/components/admin/AdminSystemNotices";
 import { Settings, Users, CreditCard, ArrowLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -122,6 +123,7 @@ export default function AdminPage() {
               <div className="space-y-6 sm:space-y-8">
                 <AdminAISettings />
                 <AdminApiKeys />
+                <AdminSystemNotices />
                 <AdminJurisprudenceSettings />
                 <AdminProcessTracking />
               </div>

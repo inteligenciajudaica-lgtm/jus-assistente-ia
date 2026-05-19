@@ -71,7 +71,8 @@ function parseNotices(value: any): SystemNotice[] {
 
 export function SystemNoticesPopover() {
   const [notices, setNotices] = useState<SystemNotice[]>([]);
-  const [dismissed, setDismissed] = useState<string[]>(() => readDismissed());
+  const [dismissed, setDismissed] = useState<string[]>(() => readIds(STORAGE_KEY));
+  const [read, setRead] = useState<string[]>(() => readIds(READ_STORAGE_KEY));
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -120,17 +121,36 @@ export function SystemNoticesPopover() {
     [notices, dismissed],
   );
 
+  const unreadCount = useMemo(
+    () => visible.filter((n) => !read.includes(n.id)).length,
+    [visible, read],
+  );
+
   const dismiss = (id: string) => {
     const next = [...dismissed, id];
     setDismissed(next);
-    writeDismissed(next);
+    writeIds(STORAGE_KEY, next);
+  };
+
+  const markRead = (id: string) => {
+    if (read.includes(id)) return;
+    const next = [...read, id];
+    setRead(next);
+    writeIds(READ_STORAGE_KEY, next);
+  };
+
+  const markAllRead = () => {
+    const next = Array.from(new Set([...read, ...visible.map((n) => n.id)]));
+    setRead(next);
+    writeIds(READ_STORAGE_KEY, next);
   };
 
   const clearAll = () => {
     const next = Array.from(new Set([...dismissed, ...notices.map((n) => n.id)]));
     setDismissed(next);
-    writeDismissed(next);
+    writeIds(STORAGE_KEY, next);
   };
+
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

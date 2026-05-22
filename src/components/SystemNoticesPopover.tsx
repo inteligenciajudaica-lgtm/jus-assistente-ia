@@ -67,6 +67,7 @@ function parseSettings(value: any): ParsedSettings {
     : null;
   const raw = value?.notices;
   if (Array.isArray(raw) && raw.length) {
+    const now = Date.now();
     return {
       defaultTtlHours,
       notices: raw
@@ -79,7 +80,9 @@ function parseSettings(value: any): ParsedSettings {
           created_at: n.created_at,
           expires_at: n.expires_at ?? null,
           active: n.active !== false,
-        })),
+        }))
+        // Reduz o payload mantido em memória descartando avisos já inativos/expirados
+        .filter((n) => n.active !== false && !isExpired(n, defaultTtlHours, now)),
     };
   }
   return { defaultTtlHours, notices: DEFAULT_NOTICES };
@@ -92,6 +95,7 @@ function isExpired(n: SystemNotice, defaultTtlHours: number | null, now: number)
   }
   return false;
 }
+
 
 
 export function SystemNoticesPopover() {

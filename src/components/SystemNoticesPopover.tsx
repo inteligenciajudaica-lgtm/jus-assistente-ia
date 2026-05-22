@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, AlertTriangle, Info, CheckCircle2, X, Check, CheckCheck } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -100,6 +101,7 @@ export function SystemNoticesPopover() {
   const [read, setRead] = useState<string[]>(() => readIds(READ_STORAGE_KEY));
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [filterLevels, setFilterLevels] = useState<NoticeLevel[]>(["info", "warning", "success"]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 60_000);
@@ -155,8 +157,15 @@ export function SystemNoticesPopover() {
 
 
   const visible = useMemo(
-    () => notices.filter((n) => n.active !== false && !dismissed.includes(n.id) && !isExpired(n, defaultTtlHours, now)),
-    [notices, dismissed, defaultTtlHours, now],
+    () =>
+      notices.filter(
+        (n) =>
+          n.active !== false &&
+          !dismissed.includes(n.id) &&
+          !isExpired(n, defaultTtlHours, now) &&
+          filterLevels.includes(n.level ?? "info"),
+      ),
+    [notices, dismissed, defaultTtlHours, now, filterLevels],
   );
 
 
@@ -244,6 +253,36 @@ export function SystemNoticesPopover() {
               </button>
             )}
           </div>
+        </div>
+        <div className="px-4 py-2 border-b border-border/60">
+          <ToggleGroup
+            type="multiple"
+            value={filterLevels}
+            onValueChange={(v) => setFilterLevels((v.length ? v : ["info", "warning", "success"]) as NoticeLevel[])}
+            className="flex gap-1.5 justify-start"
+          >
+            <ToggleGroupItem
+              value="info"
+              aria-label="Informação"
+              className="h-7 px-2.5 text-[11px] gap-1 data-[state=on]:bg-info/15 data-[state=on]:text-info data-[state=on]:border-info/40 border border-border/60 rounded-md"
+            >
+              <Info className="size-3" /> Info
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="warning"
+              aria-label="Atenção"
+              className="h-7 px-2.5 text-[11px] gap-1 data-[state=on]:bg-warning/15 data-[state=on]:text-warning data-[state=on]:border-warning/40 border border-border/60 rounded-md"
+            >
+              <AlertTriangle className="size-3" /> Alerta
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="success"
+              aria-label="Sucesso"
+              className="h-7 px-2.5 text-[11px] gap-1 data-[state=on]:bg-success/15 data-[state=on]:text-success data-[state=on]:border-success/40 border border-border/60 rounded-md"
+            >
+              <CheckCircle2 className="size-3" /> Sucesso
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
         <ScrollArea className="max-h-[60vh]">
           {visible.length === 0 ? (

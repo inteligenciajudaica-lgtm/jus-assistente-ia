@@ -129,8 +129,15 @@ export function SystemNoticesPopover() {
 
     load();
 
+    const channelName = `system-notices-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    supabase.getChannels().forEach((existingChannel) => {
+      if (existingChannel.topic === `realtime:${channelName}`) {
+        void supabase.removeChannel(existingChannel);
+      }
+    });
+
     const channel = supabase
-      .channel(`system-notices-${Math.random().toString(36).slice(2)}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "app_settings", filter: "key=eq.system_notices" },
@@ -151,7 +158,7 @@ export function SystemNoticesPopover() {
 
     return () => {
       active = false;
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, []);
 

@@ -16,6 +16,7 @@ interface SystemNotice {
   level?: NoticeLevel;
   created_at?: string;
   expires_at?: string | null;
+  active?: boolean;
 }
 
 const DEFAULT_NOTICES: SystemNotice[] = [
@@ -76,6 +77,7 @@ function parseSettings(value: any): ParsedSettings {
           level: (n.level as NoticeLevel) ?? "info",
           created_at: n.created_at,
           expires_at: n.expires_at ?? null,
+          active: n.active !== false,
         })),
     };
   }
@@ -153,7 +155,7 @@ export function SystemNoticesPopover() {
 
 
   const visible = useMemo(
-    () => notices.filter((n) => !dismissed.includes(n.id) && !isExpired(n, defaultTtlHours, now)),
+    () => notices.filter((n) => n.active !== false && !dismissed.includes(n.id) && !isExpired(n, defaultTtlHours, now)),
     [notices, dismissed, defaultTtlHours, now],
   );
 

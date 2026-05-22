@@ -254,6 +254,36 @@ export function SystemNoticesPopover() {
             )}
           </div>
         </div>
+        <div className="px-4 py-2 border-b border-border/60">
+          <ToggleGroup
+            type="multiple"
+            value={filterLevels}
+            onValueChange={(v) => setFilterLevels((v.length ? v : ["info", "warning", "success"]) as NoticeLevel[])}
+            className="flex gap-1.5 justify-start"
+          >
+            <ToggleGroupItem
+              value="info"
+              aria-label="Informação"
+              className="h-7 px-2.5 text-[11px] gap-1 data-[state=on]:bg-info/15 data-[state=on]:text-info data-[state=on]:border-info/40 border border-border/60 rounded-md"
+            >
+              <Info className="size-3" /> Info
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="warning"
+              aria-label="Atenção"
+              className="h-7 px-2.5 text-[11px] gap-1 data-[state=on]:bg-warning/15 data-[state=on]:text-warning data-[state=on]:border-warning/40 border border-border/60 rounded-md"
+            >
+              <AlertTriangle className="size-3" /> Alerta
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="success"
+              aria-label="Sucesso"
+              className="h-7 px-2.5 text-[11px] gap-1 data-[state=on]:bg-success/15 data-[state=on]:text-success data-[state=on]:border-success/40 border border-border/60 rounded-md"
+            >
+              <CheckCircle2 className="size-3" /> Sucesso
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
         <ScrollArea className="max-h-[60vh]">
           {visible.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">

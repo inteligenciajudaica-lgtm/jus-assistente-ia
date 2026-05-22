@@ -130,7 +130,7 @@ export function SystemNoticesPopover() {
     load();
 
     const channel = supabase
-      .channel("system-notices")
+      .channel(`system-notices-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "app_settings", filter: "key=eq.system_notices" },

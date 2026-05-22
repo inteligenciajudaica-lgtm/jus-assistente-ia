@@ -101,6 +101,7 @@ export function SystemNoticesPopover() {
   const [read, setRead] = useState<string[]>(() => readIds(READ_STORAGE_KEY));
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [filterLevels, setFilterLevels] = useState<NoticeLevel[]>(["info", "warning", "success"]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 60_000);

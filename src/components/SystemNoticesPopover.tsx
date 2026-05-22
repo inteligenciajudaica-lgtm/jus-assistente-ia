@@ -16,6 +16,7 @@ interface SystemNotice {
   level?: NoticeLevel;
   created_at?: string;
   expires_at?: string | null;
+  active?: boolean;
 }
 
 const DEFAULT_NOTICES: SystemNotice[] = [

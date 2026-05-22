@@ -77,6 +77,7 @@ function parseSettings(value: any): ParsedSettings {
           level: (n.level as NoticeLevel) ?? "info",
           created_at: n.created_at,
           expires_at: n.expires_at ?? null,
+          active: n.active !== false,
         })),
     };
   }

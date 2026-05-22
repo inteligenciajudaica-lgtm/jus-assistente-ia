@@ -27,8 +27,7 @@ export function DashboardHeader({ onCaseCreated }: DashboardHeaderProps) {
       </div>
       <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
         <div className="hidden sm:inline-flex"><ThemeToggle /></div>
-        <div className="hidden sm:inline-flex"><SystemNoticesPopover /></div>
-        <div className="sm:hidden"><SystemNoticesPopover /></div>
+        <SystemNoticesPopover />
         <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
         <GenerateDocumentDialog />
         <NewCaseDialog onCreated={onCaseCreated} />

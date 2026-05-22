@@ -157,8 +157,15 @@ export function SystemNoticesPopover() {
 
 
   const visible = useMemo(
-    () => notices.filter((n) => n.active !== false && !dismissed.includes(n.id) && !isExpired(n, defaultTtlHours, now)),
-    [notices, dismissed, defaultTtlHours, now],
+    () =>
+      notices.filter(
+        (n) =>
+          n.active !== false &&
+          !dismissed.includes(n.id) &&
+          !isExpired(n, defaultTtlHours, now) &&
+          filterLevels.includes(n.level ?? "info"),
+      ),
+    [notices, dismissed, defaultTtlHours, now, filterLevels],
   );
 
 
